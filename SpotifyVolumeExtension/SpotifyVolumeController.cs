@@ -4,7 +4,7 @@ namespace SpotifyVolumeExtension
 {
     public class SpotifyVolumeController
     {
-        private MediaKeyListener mkl;
+        static private MediaKeyListener mkl;
         private SpotifyClient sc;
         private int lastVolume = 0;
         private int spotifyVolume = 0;
@@ -14,16 +14,6 @@ namespace SpotifyVolumeExtension
             this.sc = sc;
             mkl = new MediaKeyListener();
             mkl.MediaKeyPressed += ChangeSpotifyVolume;
-
-        }
-
-        private void UpdateVolume()
-        {
-            if (lastVolume != spotifyVolume)
-            {
-                lastVolume = spotifyVolume;
-                SetNewVolume(spotifyVolume);
-            }
         }
 
         public void Start()
@@ -34,6 +24,15 @@ namespace SpotifyVolumeExtension
             spotifyVolume = pc.Device.VolumePercent; //Get initial spotify-volume
 
             Console.WriteLine("[SpotifyVolumeController] Started.");
+        }
+
+        private void UpdateVolume()
+        {
+            if (lastVolume != spotifyVolume)
+            {
+                lastVolume = spotifyVolume;
+                SetNewVolume(spotifyVolume);
+            }
         }
 
         private void ChangeSpotifyVolume(MediaKeyEventArgs m)
@@ -64,6 +63,10 @@ namespace SpotifyVolumeExtension
             if (error.HasError())
             {
                 Console.WriteLine(error.Error.Status);
+            }
+            else
+            {
+                Console.WriteLine($"[SpotifyVolumeController] Changed volume to {spotifyVolume}%");
             }
         }
     }

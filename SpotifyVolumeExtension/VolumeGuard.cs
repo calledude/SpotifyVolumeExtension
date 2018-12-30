@@ -37,6 +37,7 @@ namespace SpotifyVolumeExtension
 
         public void OnNext(DeviceVolumeChangedArgs value)
         {
+            if (!sc.AnyDeviceIsActive) return;
             if (value.Device.Volume == originalVolume) return;
 
             if(value.Volume < originalVolume)

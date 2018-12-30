@@ -27,6 +27,11 @@ namespace SpotifyVolumeExtension
                 api.SetVolume(spotifyVolume);
             }
         }
+
+        public bool AnyDeviceIsActive
+        {
+            get => api.GetDevices().Devices.Any(x => x.IsActive);
+        }
         
         public SpotifyClient()
         {
@@ -67,7 +72,7 @@ namespace SpotifyVolumeExtension
 
         private PlaybackContext GetPlaybackContext()
         {
-            while (!api.GetDevices().Devices.Any(x => x.IsActive))
+            while (!AnyDeviceIsActive)
             {
                 Console.Write(".");
                 Thread.Sleep(1000);

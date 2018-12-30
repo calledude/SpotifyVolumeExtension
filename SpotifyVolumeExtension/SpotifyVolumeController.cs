@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Timers;
 
 namespace SpotifyVolumeExtension
 {
@@ -6,14 +7,20 @@ namespace SpotifyVolumeExtension
     {
         static private MediaKeyListener mkl;
         private SpotifyClient sc;
-        private int lastVolume = 0;
-        private int spotifyVolume = 0;
+        private int lastVolume;
+        private int spotifyVolume;
+        private DateTime lastVolumePress;
+        private Timer blockTimer;
+        private bool blockUpdates;
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
             this.sc = sc;
             mkl = new MediaKeyListener();
             mkl.MediaKeyPressed += ChangeSpotifyVolume;
+            blockTimer = new Timer(500);
+            blockTimer.Elapsed += UnblockUpdates;
+            blockTimer.AutoReset = false;
         }
 
         public void Start()
@@ -28,6 +35,7 @@ namespace SpotifyVolumeExtension
 
         private void UpdateVolume()
         {
+            if (blockUpdates) return;
             if (lastVolume != spotifyVolume)
             {
                 lastVolume = spotifyVolume;
@@ -35,8 +43,22 @@ namespace SpotifyVolumeExtension
             }
         }
 
+        private void UnblockUpdates(object sender, ElapsedEventArgs e)
+        {
+            blockUpdates = false;
+            UpdateVolume();
+        }
+
+
         private void ChangeSpotifyVolume(MediaKeyEventArgs m)
         {
+            if (m.When - lastVolumePress < TimeSpan.FromMilliseconds(50))
+            {
+                //Block function with flag
+                blockUpdates = true;
+                blockTimer.Start();
+            }
+
             if (m.Key == KeyType.Up)
             {
                 spotifyVolume += m.Presses;
@@ -55,6 +77,7 @@ namespace SpotifyVolumeExtension
                 spotifyVolume = 0;
             }
             UpdateVolume();
+            lastVolumePress = DateTime.Now;
         }
 
         private void SetNewVolume(int volume)
@@ -62,7 +85,7 @@ namespace SpotifyVolumeExtension
             var error = sc.Api.SetVolume(volume);
             if (error.HasError())
             {
-                Console.WriteLine(error.Error.Status);
+                Console.WriteLine(error.Error.Message);
             }
             else
             {

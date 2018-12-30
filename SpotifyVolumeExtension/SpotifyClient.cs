@@ -12,25 +12,13 @@ namespace SpotifyVolumeExtension
     {
         private EventWaitHandle waitHandle = new AutoResetEvent(false);
         private ImplicitGrantAuth auth;
-        private SpotifyWebAPI api;
+        public SpotifyWebAPI Api { get; }
         private Token token;
         private string _clientID = "8c35f18897a14d9c8008323a7c167c68";
-        private int spotifyVolume = 0;
-        public int Volume
-        {
-            get => spotifyVolume;
-            set
-            {
-                spotifyVolume = value;
-                if (spotifyVolume > 100) spotifyVolume = 100;
-                if (spotifyVolume < 0) spotifyVolume = 0;
-                api.SetVolume(spotifyVolume);
-            }
-        }
 
-        public bool AnyDeviceIsActive
+        private bool AnyDeviceIsActive
         {
-            get => api.GetDevices().Devices.Any(x => x.IsActive);
+            get => Api.GetDevices().Devices?.Any(x => x.IsActive) ?? false;
         }
         
         public SpotifyClient()
@@ -38,16 +26,19 @@ namespace SpotifyVolumeExtension
             Authorize();
             waitHandle.WaitOne(); //Wait for response
 
-            api = new SpotifyWebAPI();
-            api.AccessToken = token.AccessToken;
-            api.TokenType = token.TokenType;
+            Api = new SpotifyWebAPI();
+            Api.AccessToken = token.AccessToken;
+            Api.TokenType = token.TokenType;
         }
 
         public void Start()
         {
             Console.Write("[Spotify] Waiting for Spotify to start");
-            var pc = GetPlaybackContext();
-            SetBaselineVolume(pc);
+            while (!AnyDeviceIsActive)
+            {
+                Console.Write(".");
+                Thread.Sleep(1000);
+            }
             Console.WriteLine("\n[Spotify] Successfully connected.");
         }
 
@@ -69,20 +60,10 @@ namespace SpotifyVolumeExtension
             waitHandle.Set(); //Signal that authorization is done
         }
 
-
-        private PlaybackContext GetPlaybackContext()
+        public PlaybackContext GetPlaybackContext()
         {
-            while (!AnyDeviceIsActive)
-            {
-                Console.Write(".");
-                Thread.Sleep(1000);
-            }
-            return api.GetPlayback();
+            return Api.GetPlayback();
         }
 
-        private void SetBaselineVolume(PlaybackContext pc)
-        {
-            spotifyVolume = pc.Device.VolumePercent;
-        }
     }
 }

@@ -6,10 +6,12 @@ namespace SpotifyVolumeExtension
     {
         static void Main(string[] args)
         {
+            VolumeGuard vg = new VolumeGuard();
+            vg.Start();
             SpotifyClient sc = new SpotifyClient();
             sc.Start();
-            VolumeGuard vg = new VolumeGuard(sc);
-            vg.Start();
+            SpotifyVolumeController svc = new SpotifyVolumeController(sc);
+            svc.Start();
             Application.Run();
         }
     }

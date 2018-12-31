@@ -6,6 +6,7 @@ namespace SpotifyVolumeExtension
     {
         Up, Down
     }
+
     public class MediaKeyEventArgs : EventArgs
     {
         public MediaKeyEventArgs()

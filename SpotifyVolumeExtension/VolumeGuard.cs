@@ -7,7 +7,7 @@ namespace SpotifyVolumeExtension
     public class VolumeGuard : IObserver<DeviceVolumeChangedArgs>
     {
         int originalVolume = 0;
-
+        object m = new object();
         public void Start()
         {
             CoreAudioDevice audioDevice = new CoreAudioController().DefaultPlaybackDevice;
@@ -24,12 +24,15 @@ namespace SpotifyVolumeExtension
 
         public void OnError(Exception error)
         {
-            Console.WriteLine(error.Message);
+            Console.WriteLine(error.StackTrace);
         }
         
         public void OnNext(DeviceVolumeChangedArgs value)
         {
-            value.Device.Volume = originalVolume;
+            lock (m)
+            {
+                value.Device.Volume = originalVolume;
+            }
         }
     }
 }

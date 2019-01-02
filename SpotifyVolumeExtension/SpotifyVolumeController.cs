@@ -51,7 +51,7 @@ namespace SpotifyVolumeExtension
 
         private int GetCurrentVolume()
         {
-            if (playbackContext == null) playbackContext = sc.GetPlaybackContext();
+            playbackContext = sc.GetPlaybackContext();
             return playbackContext.Device.VolumePercent;
         }
 

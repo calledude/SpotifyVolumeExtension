@@ -6,16 +6,17 @@ namespace SpotifyVolumeExtension
 {
     public class MediaKeyListener
     {
-        public event Action<MediaKeyEventArgs> MediaKeyPressed;
+        private event Action<MediaKeyEventArgs> MediaKeyPressed;
         private MediaKeyEventArgs eventArgs;
         private KeyboardInterceptor key;
         private int presses = 0;
 
-        public MediaKeyListener()
+        public MediaKeyListener(Action<MediaKeyEventArgs> mediaKeyPressed)
         {
             key = new KeyboardInterceptor();
             key.KeyDown += key_KeyDown;
             key.KeyUp += key_KeyUp;
+            MediaKeyPressed = mediaKeyPressed;
         }
 
         public void Start()

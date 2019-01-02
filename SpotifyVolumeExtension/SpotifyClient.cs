@@ -12,7 +12,7 @@ namespace SpotifyVolumeExtension
     {
         private EventWaitHandle waitHandle = new AutoResetEvent(false);
         private ImplicitGrantAuth auth;
-        public SpotifyWebAPI Api { get; }
+        public SpotifyWebAPI Api { get; private set; }
         private Token token;
         private string _clientID = "8c35f18897a14d9c8008323a7c167c68";
 
@@ -23,12 +23,8 @@ namespace SpotifyVolumeExtension
         
         public SpotifyClient()
         {
-            Authorize();
+            Authenticate();
             waitHandle.WaitOne(); //Wait for response
-
-            Api = new SpotifyWebAPI();
-            Api.AccessToken = token.AccessToken;
-            Api.TokenType = token.TokenType;
         }
 
         public void Start()
@@ -42,7 +38,7 @@ namespace SpotifyVolumeExtension
             Console.WriteLine("\n[Spotify] Successfully connected.");
         }
 
-        private void Authorize()
+        private void Authenticate()
         {
             auth = new ImplicitGrantAuth();
             auth.RedirectUri = "http://localhost:80";
@@ -57,7 +53,22 @@ namespace SpotifyVolumeExtension
         {
             this.token = token;
             auth.StopHttpServer();
-            waitHandle.Set(); //Signal that authorization is done
+
+            Api = new SpotifyWebAPI();
+            Api.AccessToken = token.AccessToken;
+            Api.TokenType = token.TokenType;
+
+            waitHandle.Set(); //Signal that authentication is done
+        }
+
+        public void RefreshToken()
+        {
+            if (token.IsExpired())
+            {
+                Authenticate();
+                waitHandle.WaitOne();
+                Console.WriteLine("[SpotifyClient] Refreshed token.");
+            }
         }
 
         public PlaybackContext GetPlaybackContext()

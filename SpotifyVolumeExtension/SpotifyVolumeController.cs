@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SpotifyAPI.Web.Models;
+using System;
 using System.Timers;
 
 namespace SpotifyVolumeExtension
@@ -12,12 +13,13 @@ namespace SpotifyVolumeExtension
         private DateTime lastVolumePress;
         private Timer blockTimer;
         private bool blockUpdates;
+        private PlaybackContext playbackContext;
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
             this.sc = sc;
-            mkl = new MediaKeyListener();
-            mkl.MediaKeyPressed += ChangeSpotifyVolume;
+            mkl = new MediaKeyListener(ChangeSpotifyVolume);
+
             blockTimer = new Timer(500);
             blockTimer.Elapsed += UnblockUpdates;
             blockTimer.AutoReset = false;
@@ -26,9 +28,7 @@ namespace SpotifyVolumeExtension
         public void Start()
         {
             mkl.Start();
-
-            var pc = sc.GetPlaybackContext();
-            spotifyVolume = pc.Device.VolumePercent; //Get initial spotify-volume
+            spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
 
             Console.WriteLine("[SpotifyVolumeController] Started.");
         }
@@ -49,6 +49,11 @@ namespace SpotifyVolumeExtension
             UpdateVolume();
         }
 
+        private int GetCurrentVolume()
+        {
+            if (playbackContext == null) playbackContext = sc.GetPlaybackContext();
+            return playbackContext.Device.VolumePercent;
+        }
 
         private void ChangeSpotifyVolume(MediaKeyEventArgs m)
         {
@@ -85,7 +90,8 @@ namespace SpotifyVolumeExtension
             var error = sc.Api.SetVolume(volume);
             if (error.HasError())
             {
-                Console.WriteLine(error.Error.Message);
+                Console.WriteLine($"{error.Error.Status} {error.Error.Message}");
+                sc.RefreshToken();
             }
             else
             {

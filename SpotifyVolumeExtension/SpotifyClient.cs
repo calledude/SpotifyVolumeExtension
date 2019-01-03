@@ -18,7 +18,7 @@ namespace SpotifyVolumeExtension
         private string _clientSecret = null; //Your Client-Secret here
         private AuthType authType;
 
-        private bool AnyDeviceIsActive
+        public bool AnyDeviceIsActive
         {
             get => Api.GetDevices().Devices?.Any(x => x.IsActive) ?? false;
         }
@@ -30,7 +30,6 @@ namespace SpotifyVolumeExtension
 
             this.authType = authType;
             Authenticate(authType);
-            waitHandle.WaitOne(); //Wait for response
 
             Api = new SpotifyWebAPI();
             Api.AccessToken = token.AccessToken;
@@ -41,10 +40,10 @@ namespace SpotifyVolumeExtension
         public void Start()
         {
             Console.Write("[Spotify] Waiting for Spotify to start");
-            while (!AnyDeviceIsActive)
+            while (!SpotifyMonitor.GetMonitorInstance(this).GetPlayingStatus())
             {
                 Console.Write(".");
-                Thread.Sleep(1000);
+                Thread.Sleep(3000);
             }
             Console.WriteLine("\n[Spotify] Successfully connected.");
         }
@@ -62,6 +61,7 @@ namespace SpotifyVolumeExtension
             auth.OnAuthReceivedEvent += OnAuthResponse;
             auth.StartHttpServer();
             auth.DoAuth();
+            waitHandle.WaitOne(); //Wait for response
         }
 
         private void OnAuthResponse(AuthorizationData response)
@@ -76,27 +76,30 @@ namespace SpotifyVolumeExtension
             waitHandle.Set();
         }
 
-        public void RefreshToken()
+        private void RefreshToken()
         {
-            if (token.IsExpired())
+            if (auth is AuthorizationCodeAuth e)
             {
-                if (auth is AuthorizationCodeAuth e)
-                {
-                    token = e.RefreshToken(token.RefreshToken, _clientSecret);
-                }
-                else
-                {
-                    Authenticate(authType);
-                    waitHandle.WaitOne();
-                }
-                Api.AccessToken = token.AccessToken;
-                Console.WriteLine("[SpotifyClient] Refreshed token.");
+                token = e.RefreshToken(token.RefreshToken, _clientSecret);
             }
+            else
+            {
+                Authenticate(authType);
+            }
+            Api.AccessToken = token.AccessToken;
+            Console.WriteLine("[SpotifyClient] Refreshed token.");
         }
 
         public PlaybackContext GetPlaybackContext()
         {
             return Api.GetPlayback();
+        }
+
+        public void HandleError(ErrorResponse error)
+        {
+            Error err = error.Error;
+            if (token.IsExpired()) RefreshToken();
+            Console.WriteLine($"{error.Error.Status} {error.Error.Message}");
         }
 
     }

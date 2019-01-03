@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Windows.Forms;
 using Open.WinKeyboardHook;
 
@@ -6,23 +7,35 @@ namespace SpotifyVolumeExtension
 {
     public class MediaKeyListener
     {
-        private event Action<MediaKeyEventArgs> MediaKeyPressed;
+        public event Action<MediaKeyEventArgs> MediaKeyPressed;
         private MediaKeyEventArgs eventArgs;
-        private KeyboardInterceptor key;
+        public KeyboardInterceptor key;
         private int presses = 0;
+        private Thread mklThread;
 
-        public MediaKeyListener(Action<MediaKeyEventArgs> mediaKeyPressed)
+        public MediaKeyListener()
         {
             key = new KeyboardInterceptor();
             key.KeyDown += key_KeyDown;
             key.KeyUp += key_KeyUp;
-            MediaKeyPressed = mediaKeyPressed;
         }
 
         public void Start()
         {
-            key.StartCapturing();
-            Console.WriteLine("[MediaKeyListener] Started.");
+            mklThread = new Thread(() =>
+            {
+                key.StartCapturing();
+                Console.WriteLine("[MediaKeyListener] Started.");
+                Application.Run();
+            });
+            mklThread.Start();
+        }
+
+        public void Stop()
+        {
+            mklThread.Abort();
+            key.StopCapturing();
+            Console.WriteLine("[MediaKeyListener] Stopped.");
         }
 
         private void key_KeyUp(object sender, KeyEventArgs e)

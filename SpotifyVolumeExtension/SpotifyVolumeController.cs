@@ -6,7 +6,7 @@ namespace SpotifyVolumeExtension
 {
     public class SpotifyVolumeController
     {
-        static private MediaKeyListener mkl;
+        private MediaKeyListener mkl;
         private SpotifyClient sc;
         private int lastVolume;
         private int spotifyVolume;
@@ -14,33 +14,49 @@ namespace SpotifyVolumeExtension
         private Timer blockTimer;
         private bool blockUpdates;
         private PlaybackContext playbackContext;
+        private System.Threading.Semaphore sem = new System.Threading.Semaphore(1, 1);
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
             this.sc = sc;
-            mkl = new MediaKeyListener(ChangeSpotifyVolume);
+            mkl = new MediaKeyListener();
+            mkl.MediaKeyPressed += ChangeSpotifyVolume;
 
             blockTimer = new Timer(500);
             blockTimer.Elapsed += UnblockUpdates;
             blockTimer.AutoReset = false;
         }
 
-        public void Start()
+        public void Start(SpotifyMonitor sm)
         {
-            mkl.Start();
-            spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
+            sm.SpotifyStatusChanged += ToggleVolumeController;
+        }
 
-            Console.WriteLine("[SpotifyVolumeController] Started.");
+        private void ToggleVolumeController(bool status)
+        {
+            if (status)
+            {
+                spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
+                mkl.Start();
+            }
+            else
+            {
+                mkl.Stop();
+            }
+            Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
         }
 
         private void UpdateVolume()
         {
             if (blockUpdates) return;
+
+            sem.WaitOne();
             if (lastVolume != spotifyVolume)
             {
                 lastVolume = spotifyVolume;
                 SetNewVolume(spotifyVolume);
             }
+            sem.Release();
         }
 
         private void UnblockUpdates(object sender, ElapsedEventArgs e)
@@ -57,6 +73,7 @@ namespace SpotifyVolumeExtension
 
         private void ChangeSpotifyVolume(MediaKeyEventArgs m)
         {
+            sem.WaitOne();
             if (m.When - lastVolumePress < TimeSpan.FromMilliseconds(50))
             {
                 //Block function with flag
@@ -81,6 +98,7 @@ namespace SpotifyVolumeExtension
             {
                 spotifyVolume = 0;
             }
+            sem.Release();
             UpdateVolume();
             lastVolumePress = DateTime.Now;
         }
@@ -90,8 +108,7 @@ namespace SpotifyVolumeExtension
             var error = sc.Api.SetVolume(volume);
             if (error.HasError())
             {
-                Console.WriteLine($"{error.Error.Status} {error.Error.Message}");
-                sc.RefreshToken();
+                sc.HandleError(error);
             }
             else
             {

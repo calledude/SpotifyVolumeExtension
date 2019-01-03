@@ -1,6 +1,6 @@
 # SpotifyVolumeExtension
 
-This branch includes changes made to the SpotifyAPI-NET Library. My fork can be found [here](https://github.com/calledude/SpotifyAPI-NET). The .dll is however included for your convenience.
+This repo includes the SpotifyAPI-NET Library with a few changes/tweaks. My fork of it can be found [here](https://github.com/calledude/SpotifyAPI-NET). The .dll is however included for your convenience.
 
 Makes Windows respect volume-button input when Spotify is running.
 

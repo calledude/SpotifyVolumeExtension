@@ -4,7 +4,7 @@ using System;
 
 namespace SpotifyVolumeExtension
 {
-    public class VolumeGuard : IObserver<DeviceVolumeChangedArgs>, IObserver<SpotifyStatusChanged>
+    public class VolumeGuard : IObserver<DeviceVolumeChangedArgs>
     {
         private int originalVolume = 0;
         private object m = new object();
@@ -14,7 +14,22 @@ namespace SpotifyVolumeExtension
 
         public void Start(SpotifyMonitor sm)
         {
-            sm.Subscribe(this);
+            sm.SpotifyStatusChanged += ToggleVolumeController;
+        }
+
+        private void ToggleVolumeController(bool status)
+        {
+            if (status && subscriber == null)
+            {
+                SetVolumeBaseline();
+                subscriber = audioDevice.VolumeChanged.Subscribe(this);
+            }
+            else
+            {
+                subscriber.Dispose();
+                subscriber = null;
+            }
+            Console.WriteLine("[VolumeGuard] " + (status ? "Started." : "Stopped."));
         }
 
         private void SetVolumeBaseline()
@@ -39,21 +54,6 @@ namespace SpotifyVolumeExtension
             {
                 value.Device.Volume = originalVolume;
             }
-        }
-
-        public void OnNext(SpotifyStatusChanged value)
-        {
-            if (value.Status && subscriber == null)
-            {
-                SetVolumeBaseline();
-                subscriber = audioDevice.VolumeChanged.Subscribe(this);
-            }
-            else
-            {
-                subscriber.Dispose();
-                subscriber = null;
-            }
-            Console.WriteLine("[VolumeGuard] " + (value.Status ? "Started." : "Stopped."));
         }
     }
 }

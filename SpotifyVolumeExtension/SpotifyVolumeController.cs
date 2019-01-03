@@ -4,7 +4,7 @@ using System.Timers;
 
 namespace SpotifyVolumeExtension
 {
-    public class SpotifyVolumeController : IObserver<SpotifyStatusChanged>
+    public class SpotifyVolumeController
     {
         private MediaKeyListener mkl;
         private SpotifyClient sc;
@@ -30,7 +30,21 @@ namespace SpotifyVolumeExtension
         public void Start(SpotifyMonitor sm)
         {
             spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
-            sm.Subscribe(this);
+            sm.SpotifyStatusChanged += ToggleVolumeController;
+        }
+
+        private void ToggleVolumeController(bool status)
+        {
+            if (status)
+            {
+                mkl.Start();
+                spotifyVolume = GetCurrentVolume();
+            }
+            else
+            {
+                mkl.Stop();
+            }
+            Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
         }
 
         private void UpdateVolume()
@@ -101,30 +115,6 @@ namespace SpotifyVolumeExtension
             {
                 Console.WriteLine($"[SpotifyVolumeController] Changed volume to {spotifyVolume}%");
             }
-        }
-
-        public void OnNext(SpotifyStatusChanged value)
-        {
-            if (value.Status)
-            {
-                mkl.Start();
-                spotifyVolume = GetCurrentVolume();
-            }
-            else
-            {
-                mkl.Stop();
-            }
-            Console.WriteLine("[SpotifyVolumeController] " + (value.Status ? "Started." : "Stopped."));
-        }
-
-        public void OnError(Exception error)
-        {
-            Console.WriteLine(error.StackTrace);
-        }
-
-        public void OnCompleted()
-        {
-            Console.WriteLine("[VolumeGuard] Stopped.");
         }
     }
 }

@@ -88,13 +88,13 @@ namespace SpotifyVolumeExtension
                 if (auth is AuthorizationCodeAuth e)
                 {
                     token = e.RefreshToken(token.RefreshToken, _clientSecret);
-                    Api.AccessToken = token.AccessToken;
                 }
                 else
                 {
                     Authenticate(authType);
                     waitHandle.WaitOne();
                 }
+                Api.AccessToken = token.AccessToken;
                 Console.WriteLine("[SpotifyClient] Refreshed token.");
             }
         }

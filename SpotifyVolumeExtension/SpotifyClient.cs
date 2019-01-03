@@ -37,10 +37,10 @@ namespace SpotifyVolumeExtension
             Api.UseAuth = true;
         }
 
-        public void Start()
+        public void Start(SpotifyMonitor sm)
         {
             Console.Write("[Spotify] Waiting for Spotify to start");
-            while (!SpotifyMonitor.GetMonitorInstance(this).GetPlayingStatus())
+            while (!sm.GetPlayingStatus())
             {
                 Console.Write(".");
                 Thread.Sleep(3000);

@@ -27,10 +27,10 @@ namespace SpotifyVolumeExtension
             blockTimer.AutoReset = false;
         }
 
-        public void Start()
+        public void Start(SpotifyMonitor sm)
         {
             spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
-            SpotifyMonitor.GetMonitorInstance(sc).Subscribe(this);
+            sm.Subscribe(this);
         }
 
         private void UpdateVolume()

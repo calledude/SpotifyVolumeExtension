@@ -8,18 +8,13 @@ namespace SpotifyVolumeExtension
     {
         private int originalVolume = 0;
         private object m = new object();
-        SpotifyClient sc;
         CoreAudioDevice audioDevice;
         IDisposable subscriber;
+        
 
-        public VolumeGuard(SpotifyClient sc)
+        public void Start(SpotifyMonitor sm)
         {
-            this.sc = sc;
-        }
-
-        public void Start()
-        {
-            SpotifyMonitor.GetMonitorInstance(sc).Subscribe(this);
+            sm.Subscribe(this);
         }
 
         private void SetVolumeBaseline()

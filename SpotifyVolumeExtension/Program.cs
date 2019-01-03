@@ -1,5 +1,4 @@
-﻿using System.Windows.Forms;
-using SpotifyAPI.Web;
+﻿using SpotifyAPI.Web;
 
 namespace SpotifyVolumeExtension
 {
@@ -8,15 +7,14 @@ namespace SpotifyVolumeExtension
         static void Main(string[] args)
         {
             SpotifyClient sc = new SpotifyClient(AuthType.Implicit);
-            sc.Start();
-
-            VolumeGuard vg = new VolumeGuard(sc);
-            vg.Start();
-
+            SpotifyMonitor sm = SpotifyMonitor.GetMonitorInstance(sc);
+            VolumeGuard vg = new VolumeGuard();
             SpotifyVolumeController svc = new SpotifyVolumeController(sc);
-            svc.Start();
 
-            SpotifyMonitor.GetMonitorInstance(sc).Start();
+            sc.Start(sm);
+            vg.Start(sm);
+            svc.Start(sm);
+            sm.Start();
         }
     }
 }

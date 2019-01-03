@@ -29,7 +29,6 @@ namespace SpotifyVolumeExtension
 
         public void Start(SpotifyMonitor sm)
         {
-            spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
             sm.SpotifyStatusChanged += ToggleVolumeController;
         }
 
@@ -37,8 +36,8 @@ namespace SpotifyVolumeExtension
         {
             if (status)
             {
+                spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
                 mkl.Start();
-                spotifyVolume = GetCurrentVolume();
             }
             else
             {

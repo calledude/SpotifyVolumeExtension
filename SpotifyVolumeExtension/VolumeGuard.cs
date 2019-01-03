@@ -10,7 +10,6 @@ namespace SpotifyVolumeExtension
         private object m = new object();
         CoreAudioDevice audioDevice;
         IDisposable subscriber;
-        
 
         public void Start(SpotifyMonitor sm)
         {

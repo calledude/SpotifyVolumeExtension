@@ -4,7 +4,6 @@ using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 using System.Threading;
-using System.Linq;
 
 namespace SpotifyVolumeExtension
 {

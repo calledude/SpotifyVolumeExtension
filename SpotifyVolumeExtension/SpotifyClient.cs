@@ -18,9 +18,9 @@ namespace SpotifyVolumeExtension
         private string _clientSecret = null; //Your Client-Secret here
         private AuthType authType;
 
-        public bool AnyDeviceIsActive
+        public bool MusicIsPlaying
         {
-            get => Api.GetDevices().Devices?.Any(x => x.IsActive) ?? false;
+            get => GetPlaybackContext().IsPlaying;
         }
         
         public SpotifyClient(AuthType authType) //AuthType.Authorization requires your own Client-ID and Client-Secret to work.

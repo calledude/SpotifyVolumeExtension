@@ -60,7 +60,7 @@ namespace SpotifyVolumeExtension
 
         private bool IsPlayingMusic()
         {
-            return sc.AnyDeviceIsActive;
+            return sc.MusicIsPlaying;
         }
     }
 }

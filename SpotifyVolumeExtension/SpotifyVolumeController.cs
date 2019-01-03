@@ -8,8 +8,8 @@ namespace SpotifyVolumeExtension
     {
         private MediaKeyListener mkl;
         private SpotifyClient sc;
-        private volatile int lastVolume;
-        private volatile int spotifyVolume;
+        private int lastVolume;
+        private int spotifyVolume;
         private DateTime lastVolumePress;
         private Timer blockTimer;
         private bool blockUpdates;

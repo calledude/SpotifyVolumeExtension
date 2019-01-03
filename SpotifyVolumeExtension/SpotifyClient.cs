@@ -32,6 +32,8 @@ namespace SpotifyVolumeExtension
             this.authType = authType;
             Authenticate(authType);
             waitHandle.WaitOne(); //Wait for response
+
+            GetNewApiInstance();
         }
 
         public void Start()
@@ -73,7 +75,6 @@ namespace SpotifyVolumeExtension
         {
             token = auth.ExchangeAuthCode(response.Code, _clientSecret);
             auth.StopHttpServer();
-            GetNewApiInstance();
 
             waitHandle.Set();
         }
@@ -82,7 +83,6 @@ namespace SpotifyVolumeExtension
         {
             implicitAuth.StopHttpServer();
             this.token = token;
-            GetNewApiInstance();
 
             waitHandle.Set(); //Signal that authentication is done
         }
@@ -92,6 +92,7 @@ namespace SpotifyVolumeExtension
             Api = new SpotifyWebAPI();
             Api.AccessToken = token.AccessToken;
             Api.TokenType = token.TokenType;
+            Api.UseAuth = true;
         }
 
         public void RefreshToken()

@@ -11,8 +11,7 @@ namespace SpotifyVolumeExtension
     public class SpotifyClient
     {
         private EventWaitHandle waitHandle = new AutoResetEvent(false);
-        private ImplicitGrantAuth implicitAuth;
-        private AutorizationCodeAuth auth;
+        private Auth auth;
         public SpotifyWebAPI Api { get; private set; }
         private Token token;
         private string _clientID = "8c35f18897a14d9c8008323a7c167c68";
@@ -50,41 +49,28 @@ namespace SpotifyVolumeExtension
         private void Authenticate(AuthType authType)
         {
             if (authType == AuthType.Implicit)
-            {
-                implicitAuth = new ImplicitGrantAuth();
-                implicitAuth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
-                implicitAuth.RedirectUri = "http://localhost:80";
-                implicitAuth.ClientId = _clientID;
-                implicitAuth.OnResponseReceivedEvent += OnImplicitAuthResponse;
-                implicitAuth.StartHttpServer();
-                implicitAuth.DoAuth();
-            }
+                auth = new ImplicitGrantAuth();
             else
-            {
-                auth = new AutorizationCodeAuth();
-                auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
-                auth.RedirectUri = "http://localhost:80";
-                auth.ClientId = _clientID;
-                auth.OnResponseReceivedEvent += OnAuthResponse;
-                auth.StartHttpServer();
-                auth.DoAuth();
-            }
+                auth = new AuthorizationCodeAuth();
+
+            auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
+            auth.RedirectUri = "http://localhost:80";
+            auth.ClientId = _clientID;
+            auth.OnAuthReceivedEvent += OnAuthResponse;
+            auth.StartHttpServer();
+            auth.DoAuth();
         }
 
-        private void OnAuthResponse(AutorizationCodeAuthResponse response)
+        private void OnAuthResponse(AuthorizationData response)
         {
-            token = auth.ExchangeAuthCode(response.Code, _clientSecret);
+            if (auth is AuthorizationCodeAuth e)
+                token = e.ExchangeAuthCode(response.Code, _clientSecret);
+            else
+                token = response.Token;
+
             auth.StopHttpServer();
 
             waitHandle.Set();
-        }
-
-        private void OnImplicitAuthResponse(Token token, string state)
-        {
-            implicitAuth.StopHttpServer();
-            this.token = token;
-
-            waitHandle.Set(); //Signal that authentication is done
         }
 
         private void GetNewApiInstance()
@@ -99,9 +85,9 @@ namespace SpotifyVolumeExtension
         {
             if (token.IsExpired())
             {
-                if (authType == AuthType.Authorization)
+                if (auth is AuthorizationCodeAuth e)
                 {
-                    token = auth.RefreshToken(token.RefreshToken, _clientSecret);
+                    token = e.RefreshToken(token.RefreshToken, _clientSecret);
                     Api.AccessToken = token.AccessToken;
                 }
                 else

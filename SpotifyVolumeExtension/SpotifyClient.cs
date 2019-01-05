@@ -16,6 +16,7 @@ namespace SpotifyVolumeExtension
         private string _clientID = "8c35f18897a14d9c8008323a7c167c68";
         private string _clientSecret = null; //Your Client-Secret here
         private AuthType authType;
+        private SpotifyMonitor sm;
 
         public bool MusicIsPlaying
         {
@@ -31,6 +32,7 @@ namespace SpotifyVolumeExtension
             Authenticate(authType);
 
             Api = new SpotifyWebAPI();
+            Api.OnError += OnError;
             Api.AccessToken = token.AccessToken;
             Api.TokenType = token.TokenType;
             Api.UseAuth = true;
@@ -38,6 +40,7 @@ namespace SpotifyVolumeExtension
 
         public void Start(SpotifyMonitor sm)
         {
+            this.sm = sm;
             Console.Write("[Spotify] Waiting for Spotify to start");
             while (!sm.GetPlayingStatus())
             {
@@ -94,11 +97,14 @@ namespace SpotifyVolumeExtension
             return Api.GetPlayback();
         }
 
-        public void HandleError(ErrorResponse error)
+        private void OnError(Error error)
         {
-            Error err = error.Error;
             if (token.IsExpired()) RefreshToken();
-            Console.WriteLine($"{error.Error.Status} {error.Error.Message}");
+            else if(error.Status == 404)
+            {
+                sm.AlertSpotifyStatus(false);
+            }
+            Console.WriteLine($"{error.Status} {error.Message}");
         }
 
     }

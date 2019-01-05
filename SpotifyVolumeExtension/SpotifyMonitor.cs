@@ -39,12 +39,20 @@ namespace SpotifyVolumeExtension
                 {
                     if (GetPlayingStatus() != lastSpotifyStatus)
                     {
-                        lastSpotifyStatus = !lastSpotifyStatus;
-                        SpotifyStatusChanged?.Invoke(lastSpotifyStatus);
+                        AlertSpotifyStatus(!lastSpotifyStatus);
                     }
                     Thread.Sleep(15000);
                 }
             }).Start();
+        }
+
+        internal void AlertSpotifyStatus(bool newState)
+        {
+            lock (m)
+            {
+                SpotifyStatusChanged?.Invoke(newState);
+                lastSpotifyStatus = newState;
+            }
         }
 
         public bool GetPlayingStatus()

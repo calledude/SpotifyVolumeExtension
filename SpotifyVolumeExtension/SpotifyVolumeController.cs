@@ -1,6 +1,6 @@
 ﻿using SpotifyAPI.Web.Models;
 using System;
-using System.Timers;
+using System.Threading;
 
 namespace SpotifyVolumeExtension
 {
@@ -14,17 +14,14 @@ namespace SpotifyVolumeExtension
         private Timer blockTimer;
         private bool blockUpdates;
         private PlaybackContext playbackContext;
-        private System.Threading.Semaphore sem = new System.Threading.Semaphore(1, 1);
+        private Semaphore sem = new Semaphore(1, 1);
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
             this.sc = sc;
             mkl = new MediaKeyListener();
             mkl.MediaKeyPressed += ChangeSpotifyVolume;
-
-            blockTimer = new Timer(500);
-            blockTimer.Elapsed += UnblockUpdates;
-            blockTimer.AutoReset = false;
+            blockTimer = new Timer(UnblockUpdates);
         }
 
         public void Start(SpotifyMonitor sm)
@@ -59,7 +56,7 @@ namespace SpotifyVolumeExtension
             sem.Release();
         }
 
-        private void UnblockUpdates(object sender, ElapsedEventArgs e)
+        private void UnblockUpdates(object sender)
         {
             blockUpdates = false;
             UpdateVolume();
@@ -78,10 +75,10 @@ namespace SpotifyVolumeExtension
             {
                 //Block function with flag
                 blockUpdates = true;
-                blockTimer.Start();
+                blockTimer.Change(500, Timeout.Infinite);
             }
 
-            if (m.Key == KeyType.Up)
+            if (m.IsVolumeUp)
             {
                 spotifyVolume += m.Presses;
             }
@@ -105,12 +102,8 @@ namespace SpotifyVolumeExtension
 
         private void SetNewVolume(int volume)
         {
-            var error = sc.Api.SetVolume(volume);
-            if (error.HasError())
-            {
-                sc.HandleError(error);
-            }
-            else
+            var err = sc.Api.SetVolume(volume);
+            if(err.Error == null)
             {
                 Console.WriteLine($"[SpotifyVolumeController] Changed volume to {spotifyVolume}%");
             }

@@ -34,7 +34,6 @@ namespace SpotifyVolumeExtension
             {
                 lastVolume = spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
                 mkl.MediaKeyPressed += ChangeSpotifyVolume;
-
             }
             else
             {

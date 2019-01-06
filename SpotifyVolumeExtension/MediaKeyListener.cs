@@ -9,7 +9,7 @@ namespace SpotifyVolumeExtension
     {
         public event Action<MediaKeyEventArgs> MediaKeyPressed;
         public event Action PlayPausePressed;
-        public KeyboardInterceptor key;
+        private KeyboardInterceptor key;
         private int presses = 0;
 
         public MediaKeyListener()

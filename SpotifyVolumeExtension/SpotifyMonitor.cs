@@ -8,54 +8,83 @@ namespace SpotifyVolumeExtension
     public class SpotifyMonitor
     {
         private SpotifyClient sc;
-        private bool lastSpotifyStatus;
-        private bool started;
+        private bool lastSpotifyStatus, playKeyIsToggled;
         private static object m = new object();
         public event Action<bool> SpotifyStatusChanged;
-        private static SpotifyMonitor sm;
+        private MediaKeyListener mkl;
 
-        SpotifyMonitor(SpotifyClient sc)
+        public SpotifyMonitor(SpotifyClient sc, MediaKeyListener mkl)
         {
             this.sc = sc;
+            this.mkl = mkl;
+            mkl.PlayPausePressed += SetPlayKeyState;
+            sc.NoActivePlayer += StopVolumeControllers;
         }
 
-        public static SpotifyMonitor GetMonitorInstance(SpotifyClient sc)
+        public void Start(VolumeGuard vg, SpotifyVolumeController svc)
         {
-            lock (m)
+            Console.WriteLine("[SpotifyMonitor] Waiting for Spotify to start...");
+            vg.Start(this);
+            svc.Start(this);
+
+            while (!playKeyIsToggled && !GetPlayingStatus())
             {
-                if (sm == null) sm = new SpotifyMonitor(sc);
-                return sm;
+                Thread.Sleep(2000);
             }
+            Console.WriteLine("[SpotifyMonitor] Started. Now monitoring activity.");
+
+            new Thread(PollSpotifyStatus).Start();
         }
 
-        public void Start()
+        //Checks if Spotify is running/playing music
+        //if the status changes, subscribers (Volume controllers) to the event are alerted.
+        private void PollSpotifyStatus()
         {
-            if (started) return;
-            started = true;
-            Console.WriteLine("[SpotifyMonitor] Started. Now monitoring activity.");
-            new Thread(() =>
+            while (true)
             {
-                while (true)
+                lock (m)
                 {
                     if (GetPlayingStatus() != lastSpotifyStatus)
                     {
                         AlertSpotifyStatus(!lastSpotifyStatus);
                     }
-                    Thread.Sleep(15000);
                 }
-            }).Start();
+                Thread.Sleep(15000);
+            }
         }
 
-        internal void AlertSpotifyStatus(bool newState)
+        private void StopVolumeControllers()
+        {
+            AlertSpotifyStatus(false);
+        }
+
+        private void AlertSpotifyStatus(bool newState)
         {
             lock (m)
             {
                 SpotifyStatusChanged?.Invoke(newState);
                 lastSpotifyStatus = newState;
+                playKeyIsToggled = newState;
             }
         }
 
-        public bool GetPlayingStatus()
+        private void SetPlayKeyState()
+        {
+            lock (m)
+            {
+                if (SpotifyIsRunning())
+                {
+                    playKeyIsToggled = !playKeyIsToggled;
+                    AlertSpotifyStatus(playKeyIsToggled);
+                }
+                else
+                {
+                    playKeyIsToggled = false;
+                }
+            }
+        }
+
+        private bool GetPlayingStatus()
         {
             return SpotifyIsRunning() && IsPlayingMusic();
         }
@@ -68,7 +97,7 @@ namespace SpotifyVolumeExtension
 
         private bool IsPlayingMusic()
         {
-            return sc.MusicIsPlaying;
+            return sc.GetPlaybackContext().IsPlaying;
         }
     }
 }

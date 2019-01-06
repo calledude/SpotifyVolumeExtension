@@ -91,8 +91,7 @@ namespace SpotifyVolumeExtension
 
         private bool SpotifyIsRunning()
         {
-            var spotifyProcesses = Process.GetProcessesByName("Spotify");
-            return spotifyProcesses.Any();
+            return Process.GetProcessesByName("Spotify").Any();
         }
 
         private bool IsPlayingMusic()

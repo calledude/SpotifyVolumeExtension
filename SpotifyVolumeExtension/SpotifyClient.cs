@@ -73,7 +73,7 @@ namespace SpotifyVolumeExtension
         {
             if (auth is AuthorizationCodeAuth e)
             {
-                await e.RefreshToken(token.RefreshToken);
+                token = await e.RefreshToken(token.RefreshToken);
             }
             else
             {

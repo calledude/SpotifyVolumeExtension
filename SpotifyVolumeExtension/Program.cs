@@ -1,20 +1,22 @@
-﻿using SpotifyAPI.Web;
-
-namespace SpotifyVolumeExtension
+﻿namespace SpotifyVolumeExtension
 {
+    public enum AuthType
+    {
+        Authorization, Implicit
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            SpotifyClient sc = new SpotifyClient(AuthType.Implicit);
-            SpotifyMonitor sm = SpotifyMonitor.GetMonitorInstance(sc);
-            VolumeGuard vg = new VolumeGuard();
-            SpotifyVolumeController svc = new SpotifyVolumeController(sc);
+            MediaKeyListener mkl = new MediaKeyListener();
+            mkl.Start();
 
-            sc.Start(sm);
-            vg.Start(sm);
-            svc.Start(sm);
-            sm.Start();
+            SpotifyClient sc = new SpotifyClient(AuthType.Implicit);
+            sc.Start();
+
+            SpotifyMonitor sm = new SpotifyMonitor(sc, mkl);
+            sm.Start(new VolumeGuard(), new SpotifyVolumeController(sc, mkl));
         }
     }
 }

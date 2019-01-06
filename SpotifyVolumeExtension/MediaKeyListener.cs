@@ -8,9 +8,9 @@ namespace SpotifyVolumeExtension
     public class MediaKeyListener
     {
         public event Action<MediaKeyEventArgs> MediaKeyPressed;
-        public KeyboardInterceptor key;
+        public event Action PlayPausePressed;
+        private KeyboardInterceptor key;
         private int presses = 0;
-        private bool runHook;
 
         public MediaKeyListener()
         {
@@ -21,25 +21,11 @@ namespace SpotifyVolumeExtension
 
         public void Start()
         {
-            runHook = true;
             new Thread(() =>
             {
                 key.StartCapturing();
-                while (runHook)
-                {
-                    Thread.Sleep(1);
-                    Application.DoEvents();
-                }
-                key.StopCapturing();
+                Application.Run();
             }).Start();
-
-            Console.WriteLine("[MediaKeyListener] Started.");
-        }
-
-        public void Stop()
-        {
-            runHook = false;
-            Console.WriteLine("[MediaKeyListener] Stopped.");
         }
 
         private void key_KeyUp(object sender, KeyEventArgs e)
@@ -54,6 +40,7 @@ namespace SpotifyVolumeExtension
                 MediaKeyPressed?.Invoke(eventArgs);
                 presses = 0;
             }
+            else if (e.KeyCode == Keys.MediaPlayPause) PlayPausePressed?.Invoke();
         }
 
         private void key_KeyDown(object sender, KeyEventArgs e)

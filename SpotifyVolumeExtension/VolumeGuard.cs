@@ -25,7 +25,7 @@ namespace SpotifyVolumeExtension
             }
             else
             {
-                subscriber.Dispose();
+                subscriber?.Dispose();
                 subscriber = null;
             }
             Console.WriteLine("[VolumeGuard] " + (status ? "Started." : "Stopped."));

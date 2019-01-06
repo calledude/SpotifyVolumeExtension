@@ -1,12 +1,10 @@
-﻿using SpotifyAPI.Web;
-
-public enum AuthType
+﻿namespace SpotifyVolumeExtension
 {
-    Authorization, Implicit
-}
+    public enum AuthType
+    {
+        Authorization, Implicit
+    }
 
-namespace SpotifyVolumeExtension
-{
     class Program
     {
         static void Main(string[] args)

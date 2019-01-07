@@ -45,13 +45,7 @@ namespace SpotifyVolumeExtension
             if (authType == AuthType.Implicit)
                 auth = new ImplicitGrantAuth(_clientID, "http://localhost:80", "http://localhost:80");
             else
-            {
-                auth = new AuthorizationCodeAuth("http://localhost:80", "http://localhost:80")
-                {
-                    ClientId = _clientID,
-                    SecretId = _clientSecret
-                };
-            }
+                auth = new AuthorizationCodeAuth(_clientID, _clientSecret, "http://localhost:80", "http://localhost:80");
 
             auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
             auth.AuthReceived += OnAuthResponse;
@@ -80,6 +74,7 @@ namespace SpotifyVolumeExtension
                 Authenticate(authType);
             }
             Api.AccessToken = token.AccessToken;
+
             Console.WriteLine("[SpotifyClient] Refreshed token.");
         }
 

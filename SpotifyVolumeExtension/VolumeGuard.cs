@@ -9,13 +9,11 @@ namespace SpotifyVolumeExtension
         private int originalVolume;
         private object m = new object();
         private CoreAudioDevice audioDevice;
-        private CoreAudioController cac;
         private bool Running;
 
         public VolumeGuard()
         {
-            cac = new CoreAudioController();
-            audioDevice = cac.DefaultPlaybackDevice;
+            audioDevice = new CoreAudioController().DefaultPlaybackDevice;
         }
 
         public void Start(SpotifyMonitor sm)

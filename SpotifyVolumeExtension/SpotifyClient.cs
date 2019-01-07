@@ -85,12 +85,18 @@ namespace SpotifyVolumeExtension
 
         private void OnError(Error error)
         {
-            if (token.IsExpired()) RefreshToken();
-            else if(error.Status == 404) // No active player
+            if (token.IsExpired())
+            {
+                RefreshToken();
+            }
+            else if (error.Status == 404) // No active player
             {
                 NoActivePlayer?.Invoke();
             }
-            Console.WriteLine($"{error.Status} {error.Message}");
+            else
+            {
+                Console.WriteLine($"{error.Status} {error.Message}");
+            }
         }
 
     }

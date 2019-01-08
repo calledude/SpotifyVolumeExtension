@@ -69,14 +69,17 @@
     <Reference Include="Open.WinKeyboardHook, Version=1.0.14.0, Culture=neutral, PublicKeyToken=df1764df09aef66e, processorArchitecture=MSIL">
       <HintPath>..\packages\Open.WinKeyboardHook.1.0.14\lib\net40\Open.WinKeyboardHook.dll</HintPath>
     </Reference>
-    <Reference Include="SpotifyAPI.Web">
+    <Reference Include="SpotifyAPI.Web, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\SpotifyAPI.Web.dll</HintPath>
     </Reference>
-    <Reference Include="SpotifyAPI.Web.Auth">
+    <Reference Include="SpotifyAPI.Web.Auth, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\SpotifyAPI.Web.Auth.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -99,6 +102,7 @@
     <Compile Include="SpotifyMonitor.cs" />
     <Compile Include="SpotifyVolumeController.cs" />
     <Compile Include="MediaKeyListener.cs" />
+    <Compile Include="ConsoleController.cs" />
     <Compile Include="VolumeGuard.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -16,7 +16,7 @@
             sc.Start();
 
             SpotifyMonitor sm = new SpotifyMonitor(sc, mkl);
-            sm.Start(new VolumeGuard(), new SpotifyVolumeController(sc, mkl));
+            sm.Start();
         }
     }
 }

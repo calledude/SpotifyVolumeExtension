@@ -13,8 +13,8 @@ namespace SpotifyVolumeExtension
         private DateTime lastVolumePress;
         private Timer blockTimer;
         private bool blockUpdates;
-        private PlaybackContext playbackContext;
         private object m = new object();
+        private bool Running;
 
         public SpotifyVolumeController(SpotifyClient sc, MediaKeyListener mkl)
         {
@@ -30,16 +30,20 @@ namespace SpotifyVolumeExtension
 
         private void ToggleVolumeController(bool status)
         {
-            if (status)
+            if (status != Running)
             {
-                lastVolume = spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
-                mkl.MediaKeyPressed += ChangeSpotifyVolume;
+                if (status)
+                {
+                    lastVolume = spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
+                    mkl.MediaKeyPressed += ChangeSpotifyVolume;
+                }
+                else
+                {
+                    mkl.MediaKeyPressed -= ChangeSpotifyVolume;
+                }
+                Running = status;
+                Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
             }
-            else
-            {
-                mkl.MediaKeyPressed -= ChangeSpotifyVolume;
-            }
-            Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
         }
 
         private void UpdateVolume()
@@ -65,9 +69,16 @@ namespace SpotifyVolumeExtension
             UpdateVolume();
         }
 
+        //Spotify web api might not be fast enough to realize we have begun playing music
+        //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
         private int GetCurrentVolume()
         {
-            playbackContext = sc.GetPlaybackContext();
+            var playbackContext = sc.GetPlaybackContext();
+            while (playbackContext.Device == null)
+            {
+                Thread.Sleep(500);
+                playbackContext = sc.GetPlaybackContext();
+            }
             return playbackContext.Device.VolumePercent;
         }
 

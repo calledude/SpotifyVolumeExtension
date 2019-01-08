@@ -24,12 +24,15 @@ namespace SpotifyVolumeExtension
 
         private void ToggleVolumeController(bool status)
         {
-            if (status)
+            if (status != Running)
             {
-                SetVolumeBaseline();
+                if (status)
+                {
+                    SetVolumeBaseline();
+                }
+                Running = status;
+                Console.WriteLine("[VolumeGuard] " + (Running ? "Started." : "Stopped."));
             }
-            Running = status;
-            Console.WriteLine("[VolumeGuard] " + (Running ? "Started." : "Stopped."));
         }
 
         private void SetVolumeBaseline()

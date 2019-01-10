@@ -7,7 +7,7 @@ namespace SpotifyVolumeExtension
     public class VolumeGuard : IObserver<DeviceVolumeChangedArgs>
     {
         private int originalVolume;
-        private object m = new object();
+        private static object m = new object();
         private CoreAudioDevice audioDevice;
         private bool Running;
 
@@ -54,7 +54,7 @@ namespace SpotifyVolumeExtension
         {
             lock (m)
             {
-                if (!Running) return;
+                if (!Running || value.Device.Volume == originalVolume) return;
                 value.Device.Volume = originalVolume;
             }
         }

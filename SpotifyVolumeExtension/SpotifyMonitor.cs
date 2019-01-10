@@ -30,6 +30,7 @@ namespace SpotifyVolumeExtension
             svc.Start(this);
 
             mkl.PlayPausePressed += SetPlayKeyState;
+            mkl.StopPressed += StopVolumeControllers;
             sc.NoActivePlayer += StopVolumeControllers;
             procs = Process.GetProcessesByName("Spotify");
         }

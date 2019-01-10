@@ -9,6 +9,7 @@ namespace SpotifyVolumeExtension
     {
         public event Action<MediaKeyEventArgs> MediaKeyPressed;
         public event Action PlayPausePressed;
+        public event Action StopPressed;
         private KeyboardInterceptor key;
         private int presses = 0;
 
@@ -41,6 +42,7 @@ namespace SpotifyVolumeExtension
                 presses = 0;
             }
             else if (e.KeyCode == Keys.MediaPlayPause) PlayPausePressed?.Invoke();
+            else if (e.KeyCode == Keys.MediaStop) StopPressed?.Invoke();
         }
 
         private void key_KeyDown(object sender, KeyEventArgs e)

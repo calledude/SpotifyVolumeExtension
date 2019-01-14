@@ -5,13 +5,10 @@
         Authorization, Implicit
     }
 
-
     class Program
     {
         static void Main(string[] args)
         {
-            ConsoleController t = new ConsoleController();
-
             MediaKeyListener mkl = new MediaKeyListener();
             mkl.Start();
 
@@ -21,7 +18,8 @@
             SpotifyMonitor sm = new SpotifyMonitor(sc, mkl);
             sm.Start();
 
-            t.Start();
+            ConsoleController cc = new ConsoleController();
+            cc.Start();
         }
     }
 }

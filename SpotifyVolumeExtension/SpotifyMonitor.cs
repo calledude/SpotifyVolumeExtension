@@ -11,12 +11,12 @@ namespace SpotifyVolumeExtension
         private bool lastSpotifyStatus, playKeyIsToggled, Running;
         private static object m = new object();
         private static object start = new object();
-        public event Action<bool> SpotifyStatusChanged;
         private MediaKeyListener mkl;
         private Process[] procs;
         private VolumeGuard vg;
         private SpotifyVolumeController svc;
         private static AutoResetEvent failure = new AutoResetEvent(false);
+        public event Action<bool> SpotifyStatusChanged;
 
         public SpotifyMonitor(SpotifyClient sc, MediaKeyListener mkl)
         {
@@ -134,7 +134,6 @@ namespace SpotifyVolumeExtension
             failure.Set();
         }
 
-
         private bool GetPlayingStatus()
         {
             return SpotifyIsRunning() && IsPlayingMusic();
@@ -147,7 +146,7 @@ namespace SpotifyVolumeExtension
 
         private bool IsPlayingMusic()
         {
-            return sc.GetPlaybackContext().IsPlaying;
+            return sc.Api.GetPlayback().IsPlaying;
         }
     }
 }

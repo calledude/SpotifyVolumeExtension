@@ -4,6 +4,7 @@ using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
@@ -11,37 +12,18 @@ namespace SpotifyVolumeExtension
     {
         private EventWaitHandle authWait = new AutoResetEvent(false);
         private Auth auth;
-        public SpotifyWebAPI Api { get; private set; }
         private Token token;
         private string _clientID = "8c35f18897a14d9c8008323a7c167c68";
         private string _clientSecret = null; //Your Client-Secret here
-        private AuthType authType;
+
         public event Action NoActivePlayer;
+        public SpotifyWebAPI Api { get; private set; }
 
         public SpotifyClient(AuthType authType) //AuthType.Authorization requires your own Client-ID and Client-Secret to work.
         {
             if (authType == AuthType.Authorization && _clientSecret == null)
                 throw new InvalidOperationException("Client secret must be provided with this token-type.");
 
-            this.authType = authType;
-        }
-
-        public void Start()
-        {
-            Authenticate(authType);
-
-            Api = new SpotifyWebAPI();
-            Api.OnError += OnError;
-            Api.AccessToken = token.AccessToken;
-            Api.TokenType = token.TokenType;
-            Api.UseAuth = true;
-
-            Console.Clear();
-            Console.WriteLine("[Spotify] Successfully connected.");
-        }
-
-        private void Authenticate(AuthType authType)
-        {
             if (authType == AuthType.Implicit)
                 auth = new ImplicitGrantAuth(_clientID, "http://localhost:80", "http://localhost:80");
             else
@@ -49,6 +31,24 @@ namespace SpotifyVolumeExtension
 
             auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
             auth.AuthReceived += OnAuthResponse;
+
+        }
+
+        public void Start()
+        {
+            Authenticate();
+
+            Api = new SpotifyWebAPI();
+            Api.OnError += OnError;
+            Api.AccessToken = token.AccessToken;
+            Api.TokenType = token.TokenType;
+            Api.UseAuth = true;
+
+            Console.WriteLine("[SpotifyClient] Successfully connected.");
+        }
+
+        private void Authenticate()
+        {
             auth.Start();
             auth.OpenBrowser();
 
@@ -63,7 +63,7 @@ namespace SpotifyVolumeExtension
             authWait.Set();
         }
 
-        private async void RefreshToken()
+        private async Task RefreshToken()
         {
             if (auth is AuthorizationCodeAuth e)
             {
@@ -71,23 +71,18 @@ namespace SpotifyVolumeExtension
             }
             else
             {
-                Authenticate(authType);
+                Authenticate();
             }
             Api.AccessToken = token.AccessToken;
 
             Console.WriteLine("[SpotifyClient] Refreshed token.");
         }
 
-        public PlaybackContext GetPlaybackContext()
-        {
-            return Api.GetPlayback();
-        }
-
-        private void OnError(Error error)
+        private async void OnError(Error error)
         {
             if (token.IsExpired())
             {
-                RefreshToken();
+                await RefreshToken();
             }
             else if (error.Status == 404) // No active player
             {
@@ -95,7 +90,7 @@ namespace SpotifyVolumeExtension
             }
             else
             {
-                Console.WriteLine($"{error.Status} {error.Message}");
+                Console.WriteLine($"[SpotifyClient] {error.Status} {error.Message}");
             }
         }
 

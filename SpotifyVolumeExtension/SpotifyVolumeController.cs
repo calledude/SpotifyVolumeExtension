@@ -7,9 +7,8 @@ namespace SpotifyVolumeExtension
     {
         private MediaKeyListener mkl;
         private SpotifyClient sc;
-        private int lastVolume;
-        private int spotifyVolume;
-        private DateTime lastVolumeUpdate;
+        private int accumulatedVolumePresses;
+        private DateTime lastVolumeKeyPress;
         private Timer blockTimer;
         private bool blockUpdates;
         private object o = new object();
@@ -34,12 +33,11 @@ namespace SpotifyVolumeExtension
             {
                 if (status)
                 {
-                    lastVolume = spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
-                    mkl.MediaKeyPressed += ChangeSpotifyVolume;
+                    mkl.MediaKeyPressed += VolumeKeyPressed;
                 }
                 else
                 {
-                    mkl.MediaKeyPressed -= ChangeSpotifyVolume;
+                    mkl.MediaKeyPressed -= VolumeKeyPressed;
                 }
                 Running = status;
                 Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
@@ -48,32 +46,15 @@ namespace SpotifyVolumeExtension
 
         private void UpdateVolume()
         {
-            lock (b)
-            {
-                if (blockUpdates) return;
-
-                if (DateTime.Now - lastVolumeUpdate < TimeSpan.FromMilliseconds(50))
-                {
-                    //Block function with flag
-                    blockUpdates = true;
-                    blockTimer.Change(350, Timeout.Infinite);
-                    return;
-                }
-            }
-
             lock (o)
             {
-                if (lastVolume != spotifyVolume)
+                if (accumulatedVolumePresses != 0)
                 {
-                    if(!SetNewVolume(spotifyVolume))
-                    {
-                        spotifyVolume = lastVolume;
-                    }
-                    lastVolume = spotifyVolume;
+                    SetNewVolume(accumulatedVolumePresses);
                 }
+                accumulatedVolumePresses = 0;
             }
 
-            lock (b) lastVolumeUpdate = DateTime.Now;
         }
 
         private void UnblockUpdates(object sender)
@@ -89,37 +70,50 @@ namespace SpotifyVolumeExtension
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
         private int GetCurrentVolume()
         {
-            var playbackContext = sc.GetPlaybackContext();
+            var playbackContext = sc.Api.GetPlayback();
             while (playbackContext.Device == null)
             {
                 Thread.Sleep(500);
-                playbackContext = sc.GetPlaybackContext();
+                playbackContext = sc.Api.GetPlayback();
             }
             return playbackContext.Device.VolumePercent;
         }
 
-        private void ChangeSpotifyVolume(MediaKeyEventArgs m)
+        private void VolumeKeyPressed(int presses)
         {
             lock (o)
             {
-                if (m.IsVolumeUp) spotifyVolume += m.Presses;
-                else spotifyVolume -= m.Presses;
-
-                if (spotifyVolume > 100) spotifyVolume = 100;
-                else if (spotifyVolume < 0) spotifyVolume = 0;
+                accumulatedVolumePresses += presses;
             }
-            UpdateVolume();
+
+            lock (b)
+            {
+                if (DateTime.Now - lastVolumeKeyPress < TimeSpan.FromMilliseconds(50))
+                {
+                    //Block function with flag
+                    blockUpdates = true;
+                    blockTimer.Change(350, Timeout.Infinite);
+                }
+
+                if (!blockUpdates)
+                {
+                    UpdateVolume();
+                    lastVolumeKeyPress = DateTime.Now;
+                }
+            }
         }
 
-        private bool SetNewVolume(int volume)
+        private void SetNewVolume(int steps)
         {
-            var err = sc.Api.SetVolume(volume);
-            if(err.Error == null)
+            var newVol = steps + GetCurrentVolume();
+            if (newVol >= 0 && newVol <= 100)
             {
-                Console.WriteLine($"[SpotifyVolumeController] Changed volume to {volume}%");
-                return true;
+                var err = sc.Api.SetVolume(newVol);
+                if (err.Error == null)
+                {
+                    Console.WriteLine($"[SpotifyVolumeController] Changed volume to {newVol}%");
+                }
             }
-            return false;
         }
     }
 }

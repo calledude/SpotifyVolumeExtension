@@ -89,11 +89,11 @@ namespace SpotifyVolumeExtension
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
         private int GetCurrentVolume()
         {
-            var playbackContext = sc.GetPlaybackContext();
+            var playbackContext = sc.Api.GetPlayback();
             while (playbackContext.Device == null)
             {
                 Thread.Sleep(500);
-                playbackContext = sc.GetPlaybackContext();
+                playbackContext = sc.Api.GetPlayback();
             }
             return playbackContext.Device.VolumePercent;
         }

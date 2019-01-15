@@ -12,7 +12,6 @@ namespace SpotifyVolumeExtension
     {
         private EventWaitHandle authWait = new AutoResetEvent(false);
         private Auth auth;
-        private Token token;
         private string _clientID = "8c35f18897a14d9c8008323a7c167c68";
         private string _clientSecret = null; //Your Client-Secret here
 
@@ -32,17 +31,13 @@ namespace SpotifyVolumeExtension
             auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
             auth.AuthReceived += OnAuthResponse;
 
+            Api = new SpotifyWebAPI();
+            Api.OnError += OnError;
         }
 
         public void Start()
         {
             Authenticate();
-
-            Api = new SpotifyWebAPI();
-            Api.OnError += OnError;
-            Api.AccessToken = token.AccessToken;
-            Api.TokenType = token.TokenType;
-            Api.UseAuth = true;
 
             Console.WriteLine("[SpotifyClient] Successfully connected.");
         }
@@ -57,7 +52,7 @@ namespace SpotifyVolumeExtension
 
         private void OnAuthResponse(object sender, Token payload)
         {
-            token = payload;
+            Api.Token = payload;
             auth.Stop(0);
 
             authWait.Set();
@@ -67,20 +62,19 @@ namespace SpotifyVolumeExtension
         {
             if (auth is AuthorizationCodeAuth e)
             {
-                token = await e.RefreshToken(token.RefreshToken);
+                Api.Token = await e.RefreshToken(Api.Token.RefreshToken);
             }
             else
             {
                 Authenticate();
             }
-            Api.AccessToken = token.AccessToken;
 
             Console.WriteLine("[SpotifyClient] Refreshed token.");
         }
 
         private async void OnError(Error error)
         {
-            if (token.IsExpired())
+            if (Api.Token.IsExpired())
             {
                 await RefreshToken();
             }

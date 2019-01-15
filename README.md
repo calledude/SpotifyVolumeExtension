@@ -1,5 +1,8 @@
 # SpotifyVolumeExtension
 
+### THIS BRANCH CONTAINS CODE CHANGES THAT WILL ONLY WORK PROPERLY ONCE **[THIS](https://github.com/spotify/web-api/issues/1133)** IS RESOLVED.
+
+
 Makes Windows respect volume-button input when Spotify is running.
 
 Since Windows refuses to recognize when other programs that use the media buttons might be running, I decided to fix that.

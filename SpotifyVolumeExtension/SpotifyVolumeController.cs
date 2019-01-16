@@ -8,18 +8,15 @@ namespace SpotifyVolumeExtension
         private MediaKeyListener mkl;
         private SpotifyClient sc;
         private int accumulatedVolumePresses;
-        private DateTime lastVolumeKeyPress;
-        private Timer blockTimer;
-        private bool blockUpdates;
         private object o = new object();
-        private object b = new object();
+        private AutoResetEvent waitForKeyPress = new AutoResetEvent(false);
+        private DateTime lastVolumeChange;
         private bool Running;
 
         public SpotifyVolumeController(SpotifyClient sc, MediaKeyListener mkl)
         {
             this.sc = sc;
             this.mkl = mkl;
-            blockTimer = new Timer(UnblockUpdates);
         }
 
         public void Start(SpotifyMonitor sm)
@@ -31,40 +28,42 @@ namespace SpotifyVolumeExtension
         {
             if (status != Running)
             {
+                Running = status;
                 if (status)
                 {
                     mkl.MediaKeyPressed += VolumeKeyPressed;
+                    new Thread(UpdateVolume).Start();
                 }
                 else
                 {
                     mkl.MediaKeyPressed -= VolumeKeyPressed;
                 }
-                Running = status;
                 Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
             }
         }
-
+        
         private void UpdateVolume()
         {
-            lock (o)
+            while (Running)
             {
-                if (accumulatedVolumePresses != 0)
+                waitForKeyPress.WaitOne();
+                if (DateTime.Now - lastVolumeChange < TimeSpan.FromMilliseconds(50))
                 {
-                    SetNewVolume(accumulatedVolumePresses);
+                    Thread.Sleep(350);
                 }
-                accumulatedVolumePresses = 0;
-            }
 
+                lock (o)
+                {
+                    if (accumulatedVolumePresses != 0)
+                    {
+                        SetNewVolume(accumulatedVolumePresses);
+                        lastVolumeChange = DateTime.Now;
+                    }
+                    accumulatedVolumePresses = 0;
+                }
+            }
         }
 
-        private void UnblockUpdates(object sender)
-        {
-            lock (b)
-            {
-                blockUpdates = false;
-            }
-            UpdateVolume();
-        }
 
         //Spotify web api might not be fast enough to realize we have begun playing music
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
@@ -85,22 +84,7 @@ namespace SpotifyVolumeExtension
             {
                 accumulatedVolumePresses += presses;
             }
-
-            lock (b)
-            {
-                if (DateTime.Now - lastVolumeKeyPress < TimeSpan.FromMilliseconds(50))
-                {
-                    //Block function with flag
-                    blockUpdates = true;
-                    blockTimer.Change(350, Timeout.Infinite);
-                }
-
-                if (!blockUpdates)
-                {
-                    UpdateVolume();
-                    lastVolumeKeyPress = DateTime.Now;
-                }
-            }
+            waitForKeyPress.Set();
         }
 
         private void SetNewVolume(int steps)

@@ -10,11 +10,10 @@ namespace SpotifyVolumeExtension
         private DateTime lastVolumeChange;
         private int lastVolume;
         private int spotifyVolume;
-        private Timer blockTimer;
-        private bool blockUpdates;
         private object o = new object();
         private bool Running;
         private AutoResetEvent waitForKeyPress = new AutoResetEvent(false);
+        private Thread volThread;
 
         public SpotifyVolumeController(SpotifyClient sc, MediaKeyListener mkl)
         {
@@ -36,11 +35,14 @@ namespace SpotifyVolumeExtension
                 {
                     lastVolume = spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
                     mkl.MediaKeyPressed += VolumeKeyPressed;
-                    new Thread(UpdateVolume).Start();
+                    volThread = new Thread(UpdateVolume);
+                    volThread.Start();
                 }
                 else
                 {
+                    waitForKeyPress.Set();
                     mkl.MediaKeyPressed -= VolumeKeyPressed;
+                    volThread.Join();
                 }
                 Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
             }

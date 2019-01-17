@@ -8,7 +8,7 @@ namespace SpotifyVolumeExtension
     public class SpotifyMonitor
     {
         private SpotifyClient sc;
-        private bool lastSpotifyStatus, playKeyIsToggled, Running;
+        private bool lastSpotifyStatus, playKeyIsToggled;
         private static object m = new object();
         private static object start = new object();
         private MediaKeyListener mkl;
@@ -16,8 +16,9 @@ namespace SpotifyVolumeExtension
         private VolumeGuard vg;
         private SpotifyVolumeController svc;
         private static AutoResetEvent failure = new AutoResetEvent(false);
+        private AutoResetEvent shouldExit = new AutoResetEvent(false);
+        private Thread pollThread;
         public event Action<bool> SpotifyStatusChanged;
-
         public SpotifyMonitor(SpotifyClient sc, MediaKeyListener mkl)
         {
             this.sc = sc;
@@ -37,12 +38,6 @@ namespace SpotifyVolumeExtension
 
         public void Start()
         {
-            lock (start)
-            {
-                if (Running) return;
-                Running = true;
-            }
-
             Console.WriteLine("[SpotifyMonitor] Waiting for Spotify to start...");
             while (!SpotifyIsRunning())
             {
@@ -64,14 +59,15 @@ namespace SpotifyVolumeExtension
             }
             Console.WriteLine("[SpotifyMonitor] Started. Now monitoring activity.");
 
-            new Thread(PollSpotifyStatus).Start();
+            pollThread = new Thread(PollSpotifyStatus);
+            pollThread.Start();
         }
 
         //Checks if Spotify is running/playing music
         //if the status changes, subscribers (Volume controllers) to the event are alerted.
         private void PollSpotifyStatus()
         {
-            while (Running)
+            while (!shouldExit.WaitOne(15000))
             {
                 lock (m)
                 {
@@ -80,7 +76,6 @@ namespace SpotifyVolumeExtension
                         AlertSpotifyStatus(!lastSpotifyStatus);
                     }
                 }
-                Thread.Sleep(15000);
             }
         }
 
@@ -119,17 +114,16 @@ namespace SpotifyVolumeExtension
         {
             failure.Reset();
             Console.WriteLine("[SpotifyMonitor] No Spotify process active.");
-            lock (start)
-            {
-                Running = false;
-            }
+
+            StopVolumeControllers();
+            shouldExit.Set();
+            pollThread?.Join();
 
             while (procs.Length > 0) //Wait for all Spotify.exe processes to exit
             {
                 procs = procs.Where(x => !x.HasExited).ToArray();
             }
 
-            StopVolumeControllers();
             Start();
             failure.Set();
         }

@@ -10,13 +10,12 @@ namespace SpotifyVolumeExtension
         private SpotifyClient sc;
         private bool lastSpotifyStatus, playKeyIsToggled;
         private static object m = new object();
-        private static object start = new object();
         private MediaKeyListener mkl;
         private Process[] procs;
         private VolumeGuard vg;
         private SpotifyVolumeController svc;
         private static AutoResetEvent failure = new AutoResetEvent(false);
-        private AutoResetEvent shouldExit = new AutoResetEvent(false);
+        private static AutoResetEvent shouldExit = new AutoResetEvent(false);
         private Thread pollThread;
         public event Action<bool> SpotifyStatusChanged;
         public SpotifyMonitor(SpotifyClient sc, MediaKeyListener mkl)
@@ -61,6 +60,7 @@ namespace SpotifyVolumeExtension
 
             pollThread = new Thread(PollSpotifyStatus);
             pollThread.Start();
+            AlertSpotifyStatus(true);
         }
 
         //Checks if Spotify is running/playing music

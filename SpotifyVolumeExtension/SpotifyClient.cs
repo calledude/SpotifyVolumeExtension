@@ -58,11 +58,11 @@ namespace SpotifyVolumeExtension
             authWait.Set();
         }
 
-        private async Task RefreshToken()
+        private void RefreshToken()
         {
             if (auth is AuthorizationCodeAuth e)
             {
-                Api.Token = await e.RefreshToken(Api.Token.RefreshToken);
+                Api.Token = e.RefreshToken(Api.Token.RefreshToken).Result;
             }
             else
             {
@@ -72,11 +72,11 @@ namespace SpotifyVolumeExtension
             Console.WriteLine("[SpotifyClient] Refreshed token.");
         }
 
-        private async void OnError(Error error)
+        private void OnError(Error error)
         {
             if (Api.Token.IsExpired())
             {
-                await RefreshToken();
+                RefreshToken();
             }
             else if (error.Status == 404) // No active player
             {

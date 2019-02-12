@@ -12,8 +12,8 @@ namespace SpotifyVolumeExtension
             var sm = new SpotifyMonitor(sc);
             sm.Start();
 
-            var t = new ConsoleController();
-            t.Start();
+            var cc = new ConsoleController();
+            cc.Start();
         }
     }
 }

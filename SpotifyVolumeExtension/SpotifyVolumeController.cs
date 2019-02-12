@@ -1,82 +1,65 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace SpotifyVolumeExtension
 {
-    public class SpotifyVolumeController
+    public sealed class SpotifyVolumeController : VolumeController
     {
-        private MediaKeyListener mkl;
-        private SpotifyClient sc;
+        private readonly MediaKeyListener mkl;
+        private readonly SpotifyClient sc;
         private DateTime lastVolumeChange;
         private int lastVolume;
-        private int spotifyVolume;
-        private object o = new object();
-        private bool Running;
-        private AutoResetEvent waitForKeyPress = new AutoResetEvent(false);
-        private Thread volThread;
 
-        public SpotifyVolumeController(SpotifyClient sc, MediaKeyListener mkl)
+        public SpotifyVolumeController(SpotifyClient sc)
+            : base("SpotifyVolumeController")
         {
             this.sc = sc;
-            this.mkl = mkl;
+            mkl = new MediaKeyListener();
+            mkl.SubscribeTo(Keys.VolumeUp);
+            mkl.SubscribeTo(Keys.VolumeDown);
+            mkl.Start();
         }
 
-        public void Start(SpotifyMonitor sm)
+        protected override void Start()
         {
-            sm.SpotifyStatusChanged += ToggleVolumeController;
+            base.Start();
+
+            lastVolume = BaselineVolume;
+            mkl.SubscribedKeyPressed += VolumeKeyPressed;
         }
 
-        private void ToggleVolumeController(bool status)
+        protected override void Stop()
         {
-            if (status != Running)
-            {
-                Running = status;
-                if (status)
-                {
-                    lastVolume = spotifyVolume = GetCurrentVolume(); //Get initial spotify-volume
-                    mkl.MediaKeyPressed += VolumeKeyPressed;
-                    volThread = new Thread(UpdateVolume);
-                    volThread.Start();
-                }
-                else
-                {
-                    waitForKeyPress.Set();
-                    mkl.MediaKeyPressed -= VolumeKeyPressed;
-                    volThread.Join();
-                }
-                Console.WriteLine("[SpotifyVolumeController] " + (status ? "Started." : "Stopped."));
-            }
+            mkl.SubscribedKeyPressed -= VolumeKeyPressed;
+            base.Stop();
         }
 
         private void UpdateVolume()
         {
-            while (Running)
+            Task.Run(async () =>
             {
-                waitForKeyPress.WaitOne();
                 if (DateTime.Now - lastVolumeChange < TimeSpan.FromMilliseconds(50))
                 {
-                    Thread.Sleep(250);
+                    await Task.Delay(250);
                 }
 
-                lock (o)
+                lock (_lock)
                 {
-                    if (lastVolume != spotifyVolume)
+                    if (lastVolume != BaselineVolume)
                     {
-                        if (!SetNewVolume(spotifyVolume))
-                        {
-                            spotifyVolume = lastVolume;
-                        }
+                        SetNewVolume(BaselineVolume);
                         lastVolumeChange = DateTime.Now;
-                        lastVolume = spotifyVolume;
+                        lastVolume = BaselineVolume;
                     }
                 }
-            }
-
+            });
         }
 
         //Spotify web api might not be fast enough to realize we have begun playing music
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
-        private int GetCurrentVolume()
+        protected override int GetBaselineVolume()
         {
             var playbackContext = sc.Api.GetPlayback();
             while (playbackContext.Device == null)
@@ -89,26 +72,28 @@ namespace SpotifyVolumeExtension
 
         private void VolumeKeyPressed(MediaKeyEventArgs m)
         {
-            lock (o)
+            lock (_lock)
             {
-                if (m.IsVolumeUp) spotifyVolume += m.Presses;
-                else spotifyVolume -= m.Presses;
+                if (m.Key == Keys.VolumeUp) BaselineVolume += m.Presses;
+                else BaselineVolume -= m.Presses;
 
-                if (spotifyVolume > 100) spotifyVolume = 100;
-                else if (spotifyVolume < 0) spotifyVolume = 0;
+                if (BaselineVolume > 100) BaselineVolume = 100;
+                else if (BaselineVolume < 0) BaselineVolume = 0;
             }
-            waitForKeyPress.Set();
+            UpdateVolume();
         }
 
-        private bool SetNewVolume(int volume)
+        protected override void SetNewVolume(int volume)
         {
             var err = sc.Api.SetVolume(volume);
             if(err.Error == null)
             {
-                Console.WriteLine($"[SpotifyVolumeController] Changed volume to {volume}%");
-                return true;
+                Console.WriteLine($"[{Name}] Changed volume to {volume.ToString()}%");
             }
-            return false;
+            else
+            {
+                BaselineVolume = lastVolume;
+            }
         }
     }
 }

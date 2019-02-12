@@ -4,58 +4,34 @@ using System;
 
 namespace SpotifyVolumeExtension
 {
-    public class VolumeGuard : IObserver<DeviceVolumeChangedArgs>
+    public sealed class VolumeGuard : VolumeController, IObserver<DeviceVolumeChangedArgs>
     {
-        private int originalVolume;
-        private static object m = new object();
-        private CoreAudioDevice audioDevice;
-        private bool Running;
+        private readonly CoreAudioDevice audioDevice;
 
-        public VolumeGuard()
+        public VolumeGuard() : base("VolumeGuard")
         {
             audioDevice = new CoreAudioController().DefaultPlaybackDevice;
-        }
-
-        public void Start(SpotifyMonitor sm)
-        {
-            sm.SpotifyStatusChanged += ToggleVolumeController;
             audioDevice.VolumeChanged.Subscribe(this);
         }
 
-        private void ToggleVolumeController(bool status)
-        {
-            if (status != Running)
-            {
-                if (status)
-                {
-                    SetVolumeBaseline();
-                }
-                Running = status;
-                Console.WriteLine("[VolumeGuard] " + (Running ? "Started." : "Stopped."));
-            }
-        }
+        protected override int GetBaselineVolume()
+            => (int)audioDevice.Volume;
 
-        private void SetVolumeBaseline()
-        {
-            originalVolume = (int)audioDevice.Volume;
-        }
+        protected override void SetNewVolume(int volume)
+            => audioDevice.Volume = volume;
 
         public void OnCompleted()
-        {
-            Console.WriteLine("[VolumeGuard] Stopped.");
-        }
+            => Stop();
 
         public void OnError(Exception error)
-        {
-            Console.WriteLine(error.StackTrace);
-        }
-        
+            => Console.WriteLine(error.StackTrace);
+
         public void OnNext(DeviceVolumeChangedArgs value)
         {
-            lock (m)
+            lock (_lock)
             {
-                if (!Running || value.Device.Volume == originalVolume) return;
-                value.Device.Volume = originalVolume;
+                if (!Running || (int)value.Volume == BaselineVolume) return;
+                SetNewVolume(BaselineVolume);
             }
         }
     }

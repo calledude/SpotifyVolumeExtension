@@ -5,21 +5,18 @@ using System.Windows.Forms;
 
 namespace SpotifyVolumeExtension
 {
-    class ConsoleController
+    public sealed class ConsoleController
     {
-        static NotifyIcon notifyIcon = new NotifyIcon();
-        static bool Visible = true;
+        private static readonly NotifyIcon notifyIcon = new NotifyIcon();
+        private static bool Visible = true;
 
         private delegate bool EventHandler();
-        static EventHandler _handler;
+        private static EventHandler _handler;
 
         public ConsoleController()
         {
             Console.Title = "SpotifyVolumeExtension";
-            notifyIcon.DoubleClick += (s, e) =>
-            {
-                ToggleVisibility(s, e);
-            };
+            notifyIcon.DoubleClick += ToggleVisibility;
 
             var contextMenu = new ContextMenuStrip();
             contextMenu.Items.Add("Show", null, ToggleVisibility);
@@ -52,7 +49,7 @@ namespace SpotifyVolumeExtension
             Visible = !Visible;
             if (Visible) notifyIcon.ContextMenuStrip.Items[0].Text = "Hide";
             else notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
-            
+
             SetConsoleWindowVisibility(Visible);
         }
 
@@ -67,12 +64,12 @@ namespace SpotifyVolumeExtension
         private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
 
         [DllImport("user32.dll")]
-        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
         [DllImport("user32.dll")]
-        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-        public static void SetConsoleWindowVisibility(bool visible)
+        private static void SetConsoleWindowVisibility(bool visible)
         {
             IntPtr hWnd = FindWindow(null, Console.Title);
             if (hWnd != IntPtr.Zero)

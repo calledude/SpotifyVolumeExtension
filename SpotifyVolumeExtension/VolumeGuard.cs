@@ -34,5 +34,10 @@ namespace SpotifyVolumeExtension
                 SetNewVolume(BaselineVolume);
             }
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            audioDevice.Dispose();
+        }
     }
 }

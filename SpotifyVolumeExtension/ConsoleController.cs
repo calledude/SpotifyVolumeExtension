@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -7,6 +8,7 @@ namespace SpotifyVolumeExtension
 {
     public sealed class ConsoleController
     {
+        private static List<IDisposable> disposables = new List<IDisposable>();
         private static readonly NotifyIcon notifyIcon = new NotifyIcon();
         private static bool Visible = true;
 
@@ -38,6 +40,11 @@ namespace SpotifyVolumeExtension
             Application.Run();
         }
 
+        public void RegisterDisposable(IDisposable disposable)
+        {
+            disposables.Add(disposable);
+        }
+
         private static void CleanExit(object sender, EventArgs e)
         {
             Handler();
@@ -55,6 +62,10 @@ namespace SpotifyVolumeExtension
 
         private static bool Handler()
         {
+            foreach(var disposable in disposables)
+            {
+                disposable.Dispose();
+            }
             notifyIcon.Dispose();
             Application.Exit();
             return true;

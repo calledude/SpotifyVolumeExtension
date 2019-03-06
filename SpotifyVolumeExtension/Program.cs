@@ -13,6 +13,8 @@ namespace SpotifyVolumeExtension
             sm.Start();
 
             var cc = new ConsoleController();
+            cc.RegisterDisposable(sc);
+            cc.RegisterDisposable(sm);
             cc.Start();
         }
     }

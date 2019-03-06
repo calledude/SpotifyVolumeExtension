@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SpotifyVolumeExtension
 {
-    public abstract class VolumeController
+    public abstract class VolumeController : IDisposable
     {
         private static readonly List<VolumeController> volumeControllers = new List<VolumeController>();
 
@@ -13,6 +13,7 @@ namespace SpotifyVolumeExtension
         protected object _lock { get; }
         protected abstract int GetBaselineVolume();
         protected abstract void SetNewVolume(int volume);
+        protected abstract void Dispose(bool disposing);
 
         protected VolumeController(string name)
         {
@@ -48,6 +49,11 @@ namespace SpotifyVolumeExtension
         {
             Running = false;
             Console.WriteLine($"[{Name}] Stopped.");
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
     }
 }

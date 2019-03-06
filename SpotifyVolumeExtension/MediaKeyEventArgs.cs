@@ -1,5 +1,5 @@
-﻿using System;
-using System.Windows.Forms;
+﻿using LowLevelInput.Hooks;
+using System;
 
 namespace SpotifyVolumeExtension
 {
@@ -10,7 +10,7 @@ namespace SpotifyVolumeExtension
             When = DateTime.Now;
         }
 
-        public Keys Key { get; set; }
+        public VirtualKeyCode Key { get; set; }
         public int Presses { get; set; }
         public DateTime When { get; }
     }

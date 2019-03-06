@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using LowLevelInput.Hooks;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class SpotifyVolumeController : VolumeController
+    public sealed class SpotifyVolumeController : VolumeController, IDisposable
     {
         private readonly MediaKeyListener mkl;
         private readonly SpotifyClient sc;
@@ -17,9 +17,8 @@ namespace SpotifyVolumeExtension
         {
             this.sc = sc;
             mkl = new MediaKeyListener();
-            mkl.SubscribeTo(Keys.VolumeUp);
-            mkl.SubscribeTo(Keys.VolumeDown);
-            mkl.Start();
+            mkl.SubscribeTo(VirtualKeyCode.VolumeUp);
+            mkl.SubscribeTo(VirtualKeyCode.VolumeDown);
         }
 
         protected override void Start()
@@ -74,7 +73,7 @@ namespace SpotifyVolumeExtension
         {
             lock (_lock)
             {
-                if (m.Key == Keys.VolumeUp) BaselineVolume += m.Presses;
+                if (m.Key == VirtualKeyCode.VolumeUp) BaselineVolume += m.Presses;
                 else BaselineVolume -= m.Presses;
 
                 if (BaselineVolume > 100) BaselineVolume = 100;
@@ -94,6 +93,11 @@ namespace SpotifyVolumeExtension
             {
                 BaselineVolume = lastVolume;
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            mkl.Dispose();
         }
     }
 }

@@ -1,63 +1,47 @@
 ﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Collections.Generic;
-using System.Windows.Forms;
-using Open.WinKeyboardHook;
+using LowLevelInput.Hooks;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class MediaKeyListener
+    public sealed class MediaKeyListener : IDisposable
     {
         public event Action<MediaKeyEventArgs> SubscribedKeyPressed;
-        private readonly KeyboardInterceptor key;
-        private int presses = 0;
-        private readonly List<Keys> subscribedKeys;
-        private readonly Thread mklThread;
+        private readonly InputManager inputManager;
+        private int presses;
 
         public MediaKeyListener()
         {
-            subscribedKeys = new List<Keys>();
-            key = new KeyboardInterceptor();
-            key.KeyDown += key_KeyDown;
-            key.KeyUp += key_KeyUp;
+            inputManager = new InputManager();
+            inputManager.Initialize();
+            inputManager.CaptureMouseMove = false;
+        }
 
-            mklThread = new Thread(() =>
+        private void KeyPressedEvent(VirtualKeyCode key, KeyState state)
+        {
+            if (KeyState.Down == state)
             {
-                key.StartCapturing();
-                Application.Run();
-            });
-        }
-
-        public void Start()
-        {
-            if (mklThread.ThreadState == ThreadState.Running)
-                throw new InvalidOperationException("MediaKeyListener is already started");
-            mklThread.Start();
-        }
-
-        public void SubscribeTo(Keys key) => subscribedKeys.Add(key);
-
-        private void key_KeyUp(object sender, KeyEventArgs e)
-        {
-            if(subscribedKeys.Any(key => key == e.KeyCode))
+                presses++;
+            }
+            else if(KeyState.Up == state)
             {
                 var eventArgs = new MediaKeyEventArgs()
                 {
                     Presses = presses,
-                    Key = e.KeyCode
+                    Key = key
                 };
                 SubscribedKeyPressed?.Invoke(eventArgs);
                 presses = 0;
             }
         }
 
-        private void key_KeyDown(object sender, KeyEventArgs e)
+        public void SubscribeTo(VirtualKeyCode key)
         {
-            if (subscribedKeys.Any(key => key == e.KeyCode))
-            {
-                presses++;
-            }
+            inputManager.RegisterEvent(key, KeyPressedEvent);
+        }
+
+        public void Dispose()
+        {
+            inputManager.Dispose();
         }
     }
 }

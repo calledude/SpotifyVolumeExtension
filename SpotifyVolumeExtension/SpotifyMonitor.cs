@@ -2,13 +2,13 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Threading;
-using System.Windows.Forms;
 using Nito.AsyncEx;
 using System.Threading.Tasks;
+using LowLevelInput.Hooks;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class SpotifyMonitor
+    public sealed class SpotifyMonitor : IDisposable
     {
         private readonly SpotifyClient sc;
         private readonly object start = new object();
@@ -31,10 +31,10 @@ namespace SpotifyVolumeExtension
             svc = new SpotifyVolumeController(sc);
 
             mkl = new MediaKeyListener();
-            mkl.SubscribeTo(Keys.MediaPlayPause);
-            mkl.SubscribeTo(Keys.MediaStop);
+
+            mkl.SubscribeTo(VirtualKeyCode.MediaPlayPause);
+            mkl.SubscribeTo(VirtualKeyCode.MediaStop);
             mkl.SubscribedKeyPressed += (_) => CheckState();
-            mkl.Start();
 
             procs = Process.GetProcessesByName("Spotify");
         }
@@ -111,6 +111,14 @@ namespace SpotifyVolumeExtension
         {
             var pb =  await sc.Api.GetPlaybackAsync();
             return pb.IsPlaying;
+        }
+
+        public void Dispose()
+        {
+            svc.Dispose();
+            vg.Dispose();
+            sc.Dispose();
+            shouldExit.Dispose();
         }
     }
 }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
-    public abstract class SpotifyClient
+    public abstract class SpotifyClient : IDisposable
     {
         protected readonly AutoResetEvent authWait = new AutoResetEvent(false);
         protected readonly string _clientID = "8c35f18897a14d9c8008323a7c167c68";
@@ -42,6 +42,12 @@ namespace SpotifyVolumeExtension
             {
                 Console.WriteLine($"[SpotifyClient] {error.Status.ToString()} {error.Message}");
             }
+        }
+
+        public void Dispose()
+        {
+            authWait.Dispose();
+            Api.Dispose();
         }
     }
 

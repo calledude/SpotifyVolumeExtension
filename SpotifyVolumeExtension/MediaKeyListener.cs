@@ -12,17 +12,12 @@ namespace SpotifyVolumeExtension
         public MediaKeyListener()
         {
             inputManager = new InputManager();
-            inputManager.Initialize();
-            inputManager.CaptureMouseMove = false;
+            inputManager.Initialize(false);
         }
 
         private void KeyPressedEvent(VirtualKeyCode key, KeyState state)
         {
-            if (KeyState.Down == state)
-            {
-                presses++;
-            }
-            else if(KeyState.Up == state)
+            if(KeyState.Up == state)
             {
                 var eventArgs = new MediaKeyEventArgs()
                 {
@@ -31,6 +26,10 @@ namespace SpotifyVolumeExtension
                 };
                 SubscribedKeyPressed?.Invoke(eventArgs);
                 presses = 0;
+            }
+            else if (KeyState.Down == state)
+            {
+                presses++;
             }
         }
 

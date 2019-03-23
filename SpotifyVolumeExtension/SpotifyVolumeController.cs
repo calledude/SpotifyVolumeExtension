@@ -37,23 +37,20 @@ namespace SpotifyVolumeExtension
 
         private void UpdateVolume()
         {
-            Task.Run(async () =>
+            if (DateTime.Now - lastVolumeChange < TimeSpan.FromMilliseconds(50))
             {
-                if (DateTime.Now - lastVolumeChange < TimeSpan.FromMilliseconds(50))
-                {
-                    await Task.Delay(250);
-                }
+                Thread.Sleep(250);
+            }
 
-                lock (_lock)
+            lock (_lock)
+            {
+                if (lastVolume != BaselineVolume)
                 {
-                    if (lastVolume != BaselineVolume)
-                    {
-                        SetNewVolume(BaselineVolume);
-                        lastVolumeChange = DateTime.Now;
-                        lastVolume = BaselineVolume;
-                    }
+                    SetNewVolume(BaselineVolume);
+                    lastVolumeChange = DateTime.Now;
+                    lastVolume = BaselineVolume;
                 }
-            });
+            }
         }
 
         //Spotify web api might not be fast enough to realize we have begun playing music

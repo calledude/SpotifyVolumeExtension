@@ -53,29 +53,29 @@ namespace SpotifyVolumeExtension
 
     public sealed class SpotifyClient<T> : SpotifyClient where T : Auth
     {
-        private readonly T auth;
+        private readonly T _auth;
 
         public SpotifyClient() //AuthorizationCodeAuth requires your own Client-ID and Client-Secret to work.
         {
-            auth = (T)Activator.CreateInstance(typeof(T),
+            _auth = (T)Activator.CreateInstance(typeof(T),
                                                BindingFlags.OptionalParamBinding,
                                                null,
                                                new object[] { _clientID, "http://localhost:80", "http://localhost:80" },
                                                CultureInfo.CurrentCulture);
 
-            if (auth is AuthorizationCodeAuth e)
+            if (_auth is AuthorizationCodeAuth e)
             {
                 e.SecretId = _clientSecret ?? throw new InvalidOperationException("Client secret must be provided with " + typeof(T));
             }
 
-            auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
-            auth.AuthReceived += OnAuthResponse;
+            _auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
+            _auth.AuthReceived += OnAuthResponse;
         }
 
         public void Authenticate()
         {
-            auth.Start();
-            auth.OpenBrowser();
+            _auth.Start();
+            _auth.OpenBrowser();
 
             authWait.WaitOne(); //Wait for response
             Console.WriteLine("[SpotifyClient] Successfully authenticated.");
@@ -84,14 +84,14 @@ namespace SpotifyVolumeExtension
         protected override void OnAuthResponse(object sender, Token payload)
         {
             Api.Token = payload;
-            auth.Stop(0);
+            _auth.Stop(0);
 
             authWait.Set();
         }
 
         protected override async Task RefreshToken()
         {
-            if (auth is AuthorizationCodeAuth e)
+            if (_auth is AuthorizationCodeAuth e)
             {
                 Api.Token = await e.RefreshToken(Api.Token.RefreshToken);
             }

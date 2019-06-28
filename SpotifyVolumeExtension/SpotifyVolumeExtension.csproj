@@ -58,6 +58,7 @@
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="SpotifyAPI.Web, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -144,6 +145,9 @@
     </PackageReference>
     <PackageReference Include="Nito.AsyncEx">
       <Version>4.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="TaskScheduler">
+      <Version>2.8.11</Version>
     </PackageReference>
     <PackageReference Include="Unosquare.Swan.Lite">
       <Version>1.1.1</Version>

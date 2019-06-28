@@ -5,12 +5,12 @@ namespace SpotifyVolumeExtension
 {
     public sealed class StatusController
     {
-        private readonly SpotifyMonitor sm;
-        private bool lastState;
+        private readonly SpotifyMonitor _sm;
+        private bool _lastState;
 
         public StatusController(SpotifyMonitor sm)
         {
-            this.sm = sm ?? throw new ArgumentNullException(nameof(sm));
+            _sm = sm ?? throw new ArgumentNullException(nameof(sm));
         }
 
         public void CheckState()
@@ -19,11 +19,11 @@ namespace SpotifyVolumeExtension
             {
                 //Give spotify a chance to catch up, in case 'state' is in fact the state we are looking to change to. 
                 await Task.Delay(500);
-                var state = await sm.GetPlayingStatus();
+                var state = await _sm.GetPlayingStatus();
 
-                if (state == lastState) return;
+                if (state == _lastState) return;
 
-                lastState = state;
+                _lastState = state;
                 OnStateChange(state);
             });
         }

@@ -1,10 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Diagnostics;
-using System.Threading;
+﻿using LowLevelInput.Hooks;
 using Nito.AsyncEx;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using LowLevelInput.Hooks;
 
 namespace SpotifyVolumeExtension
 {
@@ -24,7 +24,7 @@ namespace SpotifyVolumeExtension
         {
             _statusController = new StatusController(this);
 
-            this._sc = sc ?? throw new ArgumentNullException(nameof(sc));
+            _sc = sc ?? throw new ArgumentNullException(nameof(sc));
             sc.NoActivePlayer += CheckState;
 
             _vg = new VolumeGuard();
@@ -57,7 +57,7 @@ namespace SpotifyVolumeExtension
             double sleep = 1;
             while (!await GetPlayingStatus())
             {
-                var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500*sleep));
+                var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
                 var failureWaitTask = _failure.WaitAsync();
                 var completedTask = await Task.WhenAny(timeoutTask, failureWaitTask);
 
@@ -90,7 +90,7 @@ namespace SpotifyVolumeExtension
             _pollThread?.Join();
             _failure.Set();
 
-            lock(_start)
+            lock (_start)
             {
                 _failure.Reset();
 
@@ -109,7 +109,7 @@ namespace SpotifyVolumeExtension
 
         private async Task<bool> IsPlayingMusic()
         {
-            var pb =  await _sc.Api.GetPlaybackAsync();
+            var pb = await _sc.Api.GetPlaybackAsync();
             return pb.IsPlaying;
         }
 
@@ -119,6 +119,7 @@ namespace SpotifyVolumeExtension
             _vg.Dispose();
             _sc.Dispose();
             _shouldExit.Dispose();
+            _mkl.Dispose();
         }
     }
 }

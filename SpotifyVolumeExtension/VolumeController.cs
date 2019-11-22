@@ -5,7 +5,7 @@ namespace SpotifyVolumeExtension
 {
     public abstract class VolumeController : IDisposable
     {
-        private static readonly List<VolumeController> volumeControllers = new List<VolumeController>();
+        private static readonly List<VolumeController> _volumeControllers = new List<VolumeController>();
 
         protected string Name { get; }
         protected bool Running { get; private set; }
@@ -17,14 +17,14 @@ namespace SpotifyVolumeExtension
 
         protected VolumeController(string name)
         {
-            volumeControllers.Add(this);
+            _volumeControllers.Add(this);
             Name = name;
             _lock = new object();
         }
 
         public static void StartAll()
         {
-            foreach(var vc in volumeControllers)
+            foreach (var vc in _volumeControllers)
             {
                 vc.Start();
             }
@@ -32,7 +32,7 @@ namespace SpotifyVolumeExtension
 
         public static void StopAll()
         {
-            foreach (var vc in volumeControllers)
+            foreach (var vc in _volumeControllers)
             {
                 vc.Stop();
             }

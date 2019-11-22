@@ -8,9 +8,9 @@ namespace SpotifyVolumeExtension
 {
     public sealed class ConsoleController
     {
-        private static List<IDisposable> disposables = new List<IDisposable>();
-        private static readonly NotifyIcon notifyIcon = new NotifyIcon();
-        private static bool Visible = true;
+        private static readonly List<IDisposable> _disposables = new List<IDisposable>();
+        private static readonly NotifyIcon _notifyIcon = new NotifyIcon();
+        private static bool _visible = true;
 
         private delegate bool EventHandler();
         private static EventHandler _handler;
@@ -18,17 +18,17 @@ namespace SpotifyVolumeExtension
         public ConsoleController()
         {
             Console.Title = "SpotifyVolumeExtension";
-            notifyIcon.DoubleClick += ToggleVisibility;
+            _notifyIcon.DoubleClick += ToggleVisibility;
 
             var contextMenu = new ContextMenuStrip();
             contextMenu.Items.Add("Show", null, ToggleVisibility);
             contextMenu.Items.Add("Exit", null, CleanExit);
 
-            notifyIcon.ContextMenuStrip = contextMenu;
+            _notifyIcon.ContextMenuStrip = contextMenu;
 
-            notifyIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            notifyIcon.Visible = true;
-            notifyIcon.Text = Application.ProductName;
+            _notifyIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            _notifyIcon.Visible = true;
+            _notifyIcon.Text = Application.ProductName;
 
             _handler += new EventHandler(Handler);
             SetConsoleCtrlHandler(_handler, true);
@@ -42,7 +42,7 @@ namespace SpotifyVolumeExtension
 
         public void RegisterDisposable(IDisposable disposable)
         {
-            disposables.Add(disposable);
+            _disposables.Add(disposable);
         }
 
         private static void CleanExit(object sender, EventArgs e)
@@ -53,20 +53,20 @@ namespace SpotifyVolumeExtension
 
         private static void ToggleVisibility(object sender, EventArgs e)
         {
-            Visible = !Visible;
-            if (Visible) notifyIcon.ContextMenuStrip.Items[0].Text = "Hide";
-            else notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
+            _visible = !_visible;
+            if (_visible) _notifyIcon.ContextMenuStrip.Items[0].Text = "Hide";
+            else _notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
 
-            SetConsoleWindowVisibility(Visible);
+            SetConsoleWindowVisibility(_visible);
         }
 
         private static bool Handler()
         {
-            foreach(var disposable in disposables)
+            foreach (var disposable in _disposables)
             {
                 disposable.Dispose();
             }
-            notifyIcon.Dispose();
+            _notifyIcon.Dispose();
             Application.Exit();
             return true;
         }

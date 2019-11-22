@@ -1,46 +1,45 @@
-﻿using System;
-using LowLevelInput.Hooks;
+﻿using LowLevelInput.Hooks;
+using System;
 
 namespace SpotifyVolumeExtension
 {
     public sealed class MediaKeyListener : IDisposable
     {
         public event Action<MediaKeyEventArgs> SubscribedKeyPressed;
-        private readonly InputManager inputManager;
-        private int presses;
+        private readonly InputManager _inputManager;
+        private int _presses;
 
         public MediaKeyListener()
         {
-            inputManager = new InputManager();
-            inputManager.Initialize(false);
+            _inputManager = new InputManager();
+            _inputManager.Initialize(false);
         }
 
         private void KeyPressedEvent(VirtualKeyCode key, KeyState state)
         {
-            if(KeyState.Up == state)
+            if (KeyState.Up == state)
             {
-                var eventArgs = new MediaKeyEventArgs()
+                SubscribedKeyPressed?.Invoke(new MediaKeyEventArgs()
                 {
-                    Presses = presses,
+                    Presses = _presses,
                     Key = key
-                };
-                SubscribedKeyPressed?.Invoke(eventArgs);
-                presses = 0;
+                });
+                _presses = 0;
             }
             else if (KeyState.Down == state)
             {
-                presses++;
+                _presses++;
             }
         }
 
         public void SubscribeTo(VirtualKeyCode key)
         {
-            inputManager.RegisterEvent(key, KeyPressedEvent);
+            _inputManager.RegisterEvent(key, KeyPressedEvent);
         }
 
         public void Dispose()
         {
-            inputManager.Dispose();
+            _inputManager.Dispose();
         }
     }
 }

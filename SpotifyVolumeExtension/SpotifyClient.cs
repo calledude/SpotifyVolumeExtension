@@ -1,20 +1,20 @@
-﻿using System;
-using SpotifyAPI.Web;
+﻿using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
-using System.Threading;
-using System.Reflection;
+using System;
 using System.Globalization;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
     public abstract class SpotifyClient : IDisposable
     {
-        protected readonly AutoResetEvent authWait = new AutoResetEvent(false);
-        protected readonly string _clientID = "8c35f18897a14d9c8008323a7c167c68";
-        protected readonly string _clientSecret = null; //Your Client-Secret here
+        protected AutoResetEvent AuthWait { get; } = new AutoResetEvent(false);
+        protected string ClientID { get; } = "8c35f18897a14d9c8008323a7c167c68";
+        protected string ClientSecret { get; } = null; //Your Client-Secret here
 
         public readonly SpotifyWebAPI Api;
         public event Action NoActivePlayer;
@@ -46,7 +46,7 @@ namespace SpotifyVolumeExtension
 
         public void Dispose()
         {
-            authWait.Dispose();
+            AuthWait.Dispose();
             Api.Dispose();
         }
     }
@@ -60,12 +60,12 @@ namespace SpotifyVolumeExtension
             _auth = (T)Activator.CreateInstance(typeof(T),
                                                BindingFlags.OptionalParamBinding,
                                                null,
-                                               new object[] { _clientID, "http://localhost:80", "http://localhost:80" },
+                                               new object[] { ClientID, "http://localhost:80", "http://localhost:80" },
                                                CultureInfo.CurrentCulture);
 
             if (_auth is AuthorizationCodeAuth e)
             {
-                e.SecretId = _clientSecret ?? throw new InvalidOperationException("Client secret must be provided with " + typeof(T));
+                e.SecretId = ClientSecret ?? throw new InvalidOperationException("Client secret must be provided with " + typeof(T));
             }
 
             _auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
@@ -77,7 +77,7 @@ namespace SpotifyVolumeExtension
             _auth.Start();
             _auth.OpenBrowser();
 
-            authWait.WaitOne(); //Wait for response
+            AuthWait.WaitOne(); //Wait for response
             Console.WriteLine("[SpotifyClient] Successfully authenticated.");
         }
 
@@ -86,7 +86,7 @@ namespace SpotifyVolumeExtension
             Api.Token = payload;
             _auth.Stop(0);
 
-            authWait.Set();
+            AuthWait.Set();
         }
 
         protected override async Task RefreshToken()

@@ -3,8 +3,6 @@ using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 using System;
-using System.Globalization;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -51,24 +49,25 @@ namespace SpotifyVolumeExtension
         }
     }
 
-    public sealed class SpotifyClient<T> : SpotifyClient where T : Auth
+    public sealed class SpotifyClient<T> : SpotifyClient where T : Auth, new()
     {
         private readonly T _auth;
 
         public SpotifyClient() //AuthorizationCodeAuth requires your own Client-ID and Client-Secret to work.
         {
-            _auth = (T)Activator.CreateInstance(typeof(T),
-                                               BindingFlags.OptionalParamBinding,
-                                               null,
-                                               new object[] { ClientID, "http://localhost:80", "http://localhost:80" },
-                                               CultureInfo.CurrentCulture);
+            _auth = new T()
+            {
+                Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
+                ClientId = ClientID,
+                ServerUri = "http://localhost:80",
+                RedirectUri = "http://localhost:80",
+            };
 
             if (_auth is AuthorizationCodeAuth e)
             {
                 e.SecretId = ClientSecret ?? throw new InvalidOperationException("Client secret must be provided with " + typeof(T));
             }
 
-            _auth.Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState;
             _auth.AuthReceived += OnAuthResponse;
         }
 

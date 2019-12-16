@@ -1,13 +1,13 @@
-﻿using SpotifyAPI.Web.Auth;
+﻿using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
     public static class Program
     {
-        public static void Main()
+        public static async Task Main()
         {
-            var sc = new SpotifyClient<ImplicitGrantAuth>();
-            sc.Authenticate();
+            var sc = new SpotifyClient();
+            await sc.Authenticate();
 
             var sm = new SpotifyMonitor(sc);
             sm.Start();

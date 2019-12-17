@@ -16,11 +16,11 @@ namespace SpotifyVolumeExtension
         public SpotifyWebAPI Api { get; private set; }
         public event Action NoActivePlayer;
 
-        public SpotifyClient() //AuthorizationCodeAuth requires your own Client-ID and Client-Secret to work.
+        public SpotifyClient()
         {
             _authWait = new AutoResetEvent(false);
 
-            _authFactory = new TokenSwapWebAPIFactory("https://localhost:5001/authorize")
+            _authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
             {
                 Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
                 AutoRefresh = true

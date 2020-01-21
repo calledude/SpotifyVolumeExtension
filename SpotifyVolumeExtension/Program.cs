@@ -16,10 +16,7 @@ namespace SpotifyVolumeExtension
             var vg = new VolumeGuard();
 
             var cc = new ConsoleController();
-            cc.RegisterDisposable(sc);
-            cc.RegisterDisposable(sm);
-            cc.RegisterDisposable(svc);
-            cc.RegisterDisposable(vg);
+            cc.RegisterDisposables(svc, vg, sc, sm);
             cc.Start();
         }
     }

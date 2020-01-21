@@ -40,9 +40,9 @@ namespace SpotifyVolumeExtension
             Application.Run();
         }
 
-        public void RegisterDisposable(IDisposable disposable)
+        public void RegisterDisposables(params IDisposable[] disposables)
         {
-            _disposables.Add(disposable);
+            _disposables.AddRange(disposables);
         }
 
         private static void CleanExit(object sender, EventArgs e)

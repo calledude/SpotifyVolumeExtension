@@ -1,11 +1,10 @@
-﻿using System;
+﻿using LowLevelInput.Hooks;
+using System;
 using System.Threading;
-using System.Threading.Tasks;
-using LowLevelInput.Hooks;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class SpotifyVolumeController : VolumeController, IDisposable
+    public sealed class SpotifyVolumeController : VolumeController
     {
         private readonly MediaKeyListener _mkl;
         private readonly SpotifyClient _sc;
@@ -82,7 +81,7 @@ namespace SpotifyVolumeExtension
         protected override void SetNewVolume(int volume)
         {
             var err = _sc.Api.SetVolume(volume);
-            if(err.Error == null)
+            if (err.Error == null)
             {
                 Console.WriteLine($"[{Name}] Changed volume to {volume.ToString()}%");
             }

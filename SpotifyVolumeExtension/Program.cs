@@ -12,9 +12,14 @@ namespace SpotifyVolumeExtension
             var sm = new SpotifyMonitor(sc);
             sm.Start();
 
+            var svc = new SpotifyVolumeController(sc);
+            var vg = new VolumeGuard();
+
             var cc = new ConsoleController();
             cc.RegisterDisposable(sc);
             cc.RegisterDisposable(sm);
+            cc.RegisterDisposable(svc);
+            cc.RegisterDisposable(vg);
             cc.Start();
         }
     }

@@ -23,7 +23,8 @@ namespace SpotifyVolumeExtension
             _authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
             {
                 Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
-                AutoRefresh = true
+                AutoRefresh = true,
+                Timeout = 25
             };
 
             _authFactory.OnAuthSuccess += OnAuthSuccess;

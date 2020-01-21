@@ -9,7 +9,7 @@ namespace SpotifyVolumeExtension
         private readonly CoreAudioDevice _audioDevice;
         private readonly CoreAudioController _coreAudioController;
 
-        public VolumeGuard() : base("VolumeGuard")
+        public VolumeGuard()
         {
             _coreAudioController = new CoreAudioController();
             _audioDevice = _coreAudioController.DefaultPlaybackDevice;
@@ -21,7 +21,7 @@ namespace SpotifyVolumeExtension
 
         protected override async void SetNewVolume(int volume)
         {
-             await _audioDevice.SetVolumeAsync(volume);
+            await _audioDevice.SetVolumeAsync(volume);
         }
 
         public void OnCompleted()

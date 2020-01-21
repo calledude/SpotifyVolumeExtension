@@ -12,7 +12,6 @@ namespace SpotifyVolumeExtension
         private int _lastVolume;
 
         public SpotifyVolumeController(SpotifyClient sc)
-            : base("SpotifyVolumeController")
         {
             this._sc = sc;
             _mkl = new MediaKeyListener();

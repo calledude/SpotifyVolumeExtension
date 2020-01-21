@@ -60,6 +60,15 @@ namespace SpotifyVolumeExtension
             Console.WriteLine("[SpotifyClient] Successfully authenticated.");
         }
 
+        public void SetAutoRefresh(bool autoRefresh)
+        {
+            if (autoRefresh == _authFactory.AutoRefresh)
+                return;
+
+            Console.WriteLine($"[SpotifyClient] Setting 'AutoRefresh' to: {autoRefresh.ToString()}");
+            _authFactory.AutoRefresh = autoRefresh;
+        }
+
         private void OnTokenExpired(object sender, AccessTokenExpiredEventArgs e)
             => Console.WriteLine("[SpotifyClient] Token expired.");
 

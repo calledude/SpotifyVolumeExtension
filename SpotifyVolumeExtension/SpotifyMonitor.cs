@@ -51,6 +51,8 @@ namespace SpotifyVolumeExtension
             Console.WriteLine("[SpotifyMonitor] Waiting for music to start playing.");
 
             double sleep = 1;
+
+            _sc.SetAutoRefresh(true);
             while (!await GetPlayingStatus())
             {
                 var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
@@ -60,6 +62,7 @@ namespace SpotifyVolumeExtension
                 if (completedTask == failureWaitTask) return;
                 if (sleep < 20) sleep *= 1.5;
             }
+
             Console.WriteLine("[SpotifyMonitor] Started. Now monitoring activity.");
 
             _pollThread = new Thread(PollSpotifyStatus);
@@ -85,6 +88,8 @@ namespace SpotifyVolumeExtension
             _shouldExit.Set();
             _pollThread?.Join();
             _failure.Set();
+
+            _sc.SetAutoRefresh(false);
 
             lock (_start)
             {

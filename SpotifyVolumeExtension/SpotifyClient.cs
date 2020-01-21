@@ -10,6 +10,7 @@ namespace SpotifyVolumeExtension
 {
     public sealed class SpotifyClient : IDisposable
     {
+        private readonly string _name;
         private readonly AutoResetEvent _authWait;
         private readonly TokenSwapWebAPIFactory _authFactory;
 
@@ -18,6 +19,8 @@ namespace SpotifyVolumeExtension
 
         public SpotifyClient()
         {
+            _name = GetType().Name;
+
             _authWait = new AutoResetEvent(false);
 
             _authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
@@ -44,20 +47,20 @@ namespace SpotifyVolumeExtension
             }
             else
             {
-                Console.WriteLine($"[SpotifyClient] {error.Status.ToString()} {error.Message}");
+                Log($"{error.Status.ToString()} {error.Message}");
             }
         }
 
         public async Task Authenticate()
         {
-            Console.WriteLine("[SpotifyClient] Trying to authenticate with Spotify.");
+            Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout.ToString()} seconds");
 
             Api = await _authFactory.GetWebApiAsync();
 
             Api.OnError += OnError;
 
             _authWait.WaitOne(); //Wait for response
-            Console.WriteLine("[SpotifyClient] Successfully authenticated.");
+            Log("Successfully authenticated.");
         }
 
         public void SetAutoRefresh(bool autoRefresh)
@@ -65,18 +68,21 @@ namespace SpotifyVolumeExtension
             if (autoRefresh == _authFactory.AutoRefresh)
                 return;
 
-            Console.WriteLine($"[SpotifyClient] Setting 'AutoRefresh' to: {autoRefresh.ToString()}");
+            Log($"Setting 'AutoRefresh' to: {autoRefresh.ToString()}");
             _authFactory.AutoRefresh = autoRefresh;
         }
 
         private void OnTokenExpired(object sender, AccessTokenExpiredEventArgs e)
-            => Console.WriteLine("[SpotifyClient] Token expired.");
+            => Log("Token expired.");
 
         private void OnTokenRefresh(object sender, AuthSuccessEventArgs e)
-            => Console.WriteLine("[SpotifyClient] Refreshed token.");
+            => Log("Refreshed token.");
 
         private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
             => _authWait.Set();
+
+        private void Log(string message)
+            => Console.WriteLine($"[{_name}] {message}");
 
         public void Dispose()
         {

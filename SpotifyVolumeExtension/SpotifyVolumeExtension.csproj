@@ -91,7 +91,7 @@
     <Compile Include="ConsoleController.cs" />
     <Compile Include="StatusController.cs" />
     <Compile Include="VolumeController.cs" />
-    <Compile Include="VolumeGuard.cs" />
+    <Compile Include="WindowsVolumeGuard.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xsd">

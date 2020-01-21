@@ -27,16 +27,20 @@ namespace SpotifyVolumeExtension
                 Timeout = 25
             };
 
+            _authFactory.OnAccessTokenExpired += OnTokenExpired;
             _authFactory.OnAuthSuccess += OnAuthSuccess;
             _authFactory.OnTokenRefreshSuccess += OnTokenRefresh;
         }
-
 
         private void OnError(Error error)
         {
             if (error.Status == 404) // No active player
             {
                 NoActivePlayer?.Invoke();
+            }
+            else if (error.Status == 401)
+            {
+                return;
             }
             else
             {
@@ -46,6 +50,8 @@ namespace SpotifyVolumeExtension
 
         public async Task Authenticate()
         {
+            Console.WriteLine("[SpotifyClient] Trying to authenticate with Spotify.");
+
             Api = await _authFactory.GetWebApiAsync();
 
             Api.OnError += OnError;
@@ -54,15 +60,14 @@ namespace SpotifyVolumeExtension
             Console.WriteLine("[SpotifyClient] Successfully authenticated.");
         }
 
-        private void OnTokenRefresh(object sender, TokenSwapWebAPIFactory.AuthSuccessEventArgs e)
-        {
-            Console.WriteLine("[SpotifyClient] Refreshed token.");
-        }
+        private void OnTokenExpired(object sender, AccessTokenExpiredEventArgs e)
+            => Console.WriteLine("[SpotifyClient] Token expired.");
 
-        private void OnAuthSuccess(object sender, TokenSwapWebAPIFactory.AuthSuccessEventArgs e)
-        {
-            _authWait.Set();
-        }
+        private void OnTokenRefresh(object sender, AuthSuccessEventArgs e)
+            => Console.WriteLine("[SpotifyClient] Refreshed token.");
+
+        private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
+            => _authWait.Set();
 
         public void Dispose()
         {

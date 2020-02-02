@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Nito.AsyncEx;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
@@ -10,24 +12,24 @@ namespace SpotifyVolumeExtension
         protected string Name { get; }
         protected bool Running { get; private set; }
         protected int BaselineVolume { get; set; }
-        protected object _lock { get; }
+        protected AsyncMonitor _lock { get; }
 
-        protected abstract int GetBaselineVolume();
-        protected abstract void SetNewVolume(int volume);
+        protected abstract Task<int> GetBaselineVolume();
+        protected abstract Task SetNewVolume();
         protected abstract void Dispose(bool disposing);
 
         protected VolumeController()
         {
             Name = GetType().Name;
             _volumeControllers.Add(this);
-            _lock = new object();
+            _lock = new AsyncMonitor();
         }
 
-        public static void StartAll()
+        public static async Task StartAll()
         {
             foreach (var vc in _volumeControllers)
             {
-                vc.Start();
+                await vc.Start();
             }
         }
 
@@ -39,9 +41,9 @@ namespace SpotifyVolumeExtension
             }
         }
 
-        protected virtual void Start()
+        protected virtual async Task Start()
         {
-            BaselineVolume = GetBaselineVolume();
+            BaselineVolume = await GetBaselineVolume();
             Running = true;
             Console.WriteLine($"[{Name}] Started.");
         }

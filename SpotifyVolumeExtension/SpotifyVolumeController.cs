@@ -1,6 +1,6 @@
 ﻿using LowLevelInput.Hooks;
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
@@ -20,9 +20,9 @@ namespace SpotifyVolumeExtension
             _mkl.SubscribeTo(VirtualKeyCode.VolumeDown, debounceConfig);
         }
 
-        protected override void Start()
+        protected override async Task Start()
         {
-            base.Start();
+            await base.Start();
 
             _lastVolume = BaselineVolume;
             _mkl.SubscribedKeyPressed += VolumeKeyPressed;
@@ -36,20 +36,20 @@ namespace SpotifyVolumeExtension
 
         //Spotify web api might not be fast enough to realize we have begun playing music
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
-        protected override int GetBaselineVolume()
+        protected override async Task<int> GetBaselineVolume()
         {
-            var playbackContext = _sc.Api.GetPlayback();
+            var playbackContext = await _sc.Api.GetPlaybackAsync();
             while (playbackContext.Device == null)
             {
-                Thread.Sleep(500);
-                playbackContext = _sc.Api.GetPlayback();
+                await Task.Delay(500);
+                playbackContext = await _sc.Api.GetPlaybackAsync();
             }
             return playbackContext.Device.VolumePercent;
         }
 
-        private void VolumeKeyPressed(MediaKeyEventArgs m)
+        private async void VolumeKeyPressed(MediaKeyEventArgs m)
         {
-            lock (_lock)
+            using (_ = await _lock.EnterAsync())
             {
                 if (m.Key == VirtualKeyCode.VolumeUp) BaselineVolume += m.Presses;
                 else BaselineVolume -= m.Presses;
@@ -57,20 +57,20 @@ namespace SpotifyVolumeExtension
                 if (BaselineVolume > 100) BaselineVolume = 100;
                 else if (BaselineVolume < 0) BaselineVolume = 0;
 
-                SetNewVolume(BaselineVolume);
+                await SetNewVolume();
             }
         }
 
-        protected override void SetNewVolume(int volume)
+        protected override async Task SetNewVolume()
         {
-            if (_lastVolume == volume)
+            if (_lastVolume == BaselineVolume)
                 return;
 
-            var err = _sc.Api.SetVolume(volume);
+            var err = await _sc.Api.SetVolumeAsync(BaselineVolume);
             if (err.Error == null)
             {
-                Console.WriteLine($"[{Name}] Changed volume to {volume.ToString()}%");
-                _lastVolume = volume;
+                Console.WriteLine($"[{Name}] Changed volume to {BaselineVolume.ToString()}%");
+                _lastVolume = BaselineVolume;
             }
             else
             {

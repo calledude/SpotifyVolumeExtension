@@ -1,6 +1,7 @@
 ﻿using AudioSwitcher.AudioApi;
 using AudioSwitcher.AudioApi.CoreAudio;
 using System;
+using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
@@ -16,12 +17,12 @@ namespace SpotifyVolumeExtension
             _audioDevice.VolumeChanged.Subscribe(this);
         }
 
-        protected override int GetBaselineVolume()
-            => (int)_audioDevice.Volume;
+        protected override async Task<int> GetBaselineVolume()
+            => (int)await _audioDevice.GetVolumeAsync();
 
-        protected override async void SetNewVolume(int volume)
+        protected override async Task SetNewVolume()
         {
-            await _audioDevice.SetVolumeAsync(volume);
+            await _audioDevice.SetVolumeAsync(BaselineVolume);
         }
 
         public void OnCompleted()
@@ -30,12 +31,14 @@ namespace SpotifyVolumeExtension
         public void OnError(Exception error)
             => Console.WriteLine(error.StackTrace);
 
-        public void OnNext(DeviceVolumeChangedArgs value)
+        public async void OnNext(DeviceVolumeChangedArgs value)
         {
-            lock (_lock)
+            using (_ = await _lock.EnterAsync())
             {
-                if (!Running || (int)value.Volume == BaselineVolume) return;
-                SetNewVolume(BaselineVolume);
+                if (!Running || (int)value.Volume == BaselineVolume)
+                    return;
+
+                await SetNewVolume();
             }
         }
 

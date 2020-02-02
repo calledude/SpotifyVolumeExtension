@@ -24,15 +24,15 @@ namespace SpotifyVolumeExtension
                 if (state == _lastState) return;
 
                 _lastState = state;
-                OnStateChange(state);
+                await OnStateChange(state);
             });
         }
 
-        private void OnStateChange(bool newState)
+        private async Task OnStateChange(bool newState)
         {
             if (newState)
             {
-                VolumeController.StartAll();
+                await VolumeController.StartAll();
             }
             else
             {

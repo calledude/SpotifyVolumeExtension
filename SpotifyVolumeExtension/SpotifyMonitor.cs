@@ -37,18 +37,18 @@ namespace SpotifyVolumeExtension
 
         public async void Start()
         {
-            Console.WriteLine("[SpotifyMonitor] Waiting for Spotify to start...");
+            Log("Waiting for Spotify to start...");
             while (!SpotifyIsRunning())
             {
                 await Task.Delay(750);
                 _procs = Process.GetProcessesByName("Spotify");
             }
 
-            Console.WriteLine("[SpotifyMonitor] Spotify process detected.");
+            Log("Spotify process detected.");
             _procs[0].EnableRaisingEvents = true;
             _procs[0].Exited += SpotifyExited;
 
-            Console.WriteLine("[SpotifyMonitor] Waiting for music to start playing.");
+            Log("Waiting for music to start playing.");
 
             double sleep = 1;
 
@@ -63,7 +63,7 @@ namespace SpotifyVolumeExtension
                 if (sleep < 20) sleep *= 1.5;
             }
 
-            Console.WriteLine("[SpotifyMonitor] Started. Now monitoring activity.");
+            Log("Started. Now monitoring activity.");
 
             _pollThread = new Thread(PollSpotifyStatus);
             _pollThread.Start();
@@ -79,12 +79,17 @@ namespace SpotifyVolumeExtension
             } while (!_shouldExit.WaitOne(15000));
         }
 
+        private void Log(string message)
+        {
+            Console.WriteLine($"[{GetType().Name}] {message}");
+        }
+
         private async Task CheckState()
             => await _statusController.CheckState();
 
         private async void SpotifyExited(object sender, EventArgs e)
         {
-            Console.WriteLine("[SpotifyMonitor] No Spotify process active.");
+            Log("No Spotify process active.");
             await CheckState();
             _shouldExit.Set();
             _pollThread?.Join();

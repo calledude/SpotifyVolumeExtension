@@ -8,97 +8,91 @@ using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
-    public abstract class SpotifyClient : IDisposable
+    public sealed class SpotifyClient : IDisposable
     {
-        protected AutoResetEvent AuthWait { get; } = new AutoResetEvent(false);
-        protected string ClientID { get; } = "8c35f18897a14d9c8008323a7c167c68";
-        protected string ClientSecret { get; } = null; //Your Client-Secret here
+        private readonly string _name;
+        private readonly AutoResetEvent _authWait;
+        private readonly TokenSwapWebAPIFactory _authFactory;
 
-        public readonly SpotifyWebAPI Api;
+        public SpotifyWebAPI Api { get; private set; }
         public event Action NoActivePlayer;
 
-        protected abstract Task RefreshToken();
-        protected abstract void OnAuthResponse(object sender, Token payload);
-
-        protected SpotifyClient()
+        public SpotifyClient()
         {
-            Api = new SpotifyWebAPI();
-            Api.OnError += OnError;
+            _name = GetType().Name;
+
+            _authWait = new AutoResetEvent(false);
+
+            _authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
+            {
+                Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
+                AutoRefresh = true,
+                Timeout = 25
+            };
+
+            _authFactory.OnAccessTokenExpired += OnTokenExpired;
+            _authFactory.OnAuthSuccess += OnAuthSuccess;
+            _authFactory.OnTokenRefreshSuccess += OnTokenRefresh;
         }
 
-        protected async void OnError(Error error)
+        private void OnError(Error error)
         {
-            if (Api.Token.IsExpired())
-            {
-                await RefreshToken();
-            }
-            else if (error.Status == 404) // No active player
+            if (error.Status == 404) // No active player
             {
                 NoActivePlayer?.Invoke();
             }
+            else if (error.Status == 401)
+            {
+                return;
+            }
             else
             {
-                Console.WriteLine($"[SpotifyClient] {error.Status.ToString()} {error.Message}");
+                Log($"{error.Status.ToString()} {error.Message}");
             }
         }
+
+        public async Task Authenticate()
+        {
+            Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout.ToString()} seconds");
+
+            Api = await _authFactory.GetWebApiAsync();
+
+            Api.OnError += OnError;
+
+            _authWait.WaitOne(); //Wait for response
+            Log("Successfully authenticated.");
+        }
+
+        public async void SetAutoRefresh(bool autoRefresh)
+        {
+            if (autoRefresh == _authFactory.AutoRefresh)
+                return;
+
+            Log($"Setting 'AutoRefresh' to: {autoRefresh.ToString()}");
+            _authFactory.AutoRefresh = autoRefresh;
+
+            if (autoRefresh && Api.Token.IsExpired())
+            {
+                await _authFactory.RefreshAuthAsync();
+            }
+        }
+
+        private void OnTokenExpired(object sender, AccessTokenExpiredEventArgs e)
+            => Log("Token expired.");
+
+        private void OnTokenRefresh(object sender, AuthSuccessEventArgs e)
+            => Log("Refreshed token.");
+
+        private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
+            => _authWait.Set();
+
+        private void Log(string message)
+            => Console.WriteLine($"[{_name}] {message}");
 
         public void Dispose()
         {
-            AuthWait.Dispose();
+            _authWait.Dispose();
             Api.Dispose();
-        }
-    }
-
-    public sealed class SpotifyClient<T> : SpotifyClient where T : Auth, new()
-    {
-        private readonly T _auth;
-
-        public SpotifyClient() //AuthorizationCodeAuth requires your own Client-ID and Client-Secret to work.
-        {
-            _auth = new T()
-            {
-                Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
-                ClientId = ClientID,
-                ServerUri = "http://localhost:80",
-                RedirectUri = "http://localhost:80",
-            };
-
-            if (_auth is AuthorizationCodeAuth e)
-            {
-                e.SecretId = ClientSecret ?? throw new InvalidOperationException("Client secret must be provided with " + typeof(T));
-            }
-
-            _auth.AuthReceived += OnAuthResponse;
-        }
-
-        public void Authenticate()
-        {
-            _auth.Start();
-            _auth.OpenBrowser();
-
-            AuthWait.WaitOne(); //Wait for response
-            Console.WriteLine("[SpotifyClient] Successfully authenticated.");
-        }
-
-        protected override void OnAuthResponse(object sender, Token payload)
-        {
-            Api.Token = payload;
-            _auth.Stop(0);
-
-            AuthWait.Set();
-        }
-
-        protected override async Task RefreshToken()
-        {
-            if (_auth is AuthorizationCodeAuth e)
-            {
-                Api.Token = await e.RefreshToken(Api.Token.RefreshToken);
-            }
-            else
-            {
-                Authenticate();
-            }
-            Console.WriteLine("[SpotifyClient] Refreshed token.");
         }
     }
 }

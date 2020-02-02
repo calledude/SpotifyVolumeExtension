@@ -14,7 +14,6 @@ namespace SpotifyVolumeExtension
         private readonly object _start = new object();
         private readonly MediaKeyListener _mkl;
         private Process[] _procs;
-        private readonly VolumeController _vg, _svc;
         private readonly AutoResetEvent _shouldExit = new AutoResetEvent(false);
         private Thread _pollThread;
         private readonly StatusController _statusController;
@@ -27,14 +26,11 @@ namespace SpotifyVolumeExtension
             _sc = sc ?? throw new ArgumentNullException(nameof(sc));
             sc.NoActivePlayer += CheckState;
 
-            _vg = new VolumeGuard();
-            _svc = new SpotifyVolumeController(sc);
-
             _mkl = new MediaKeyListener();
 
             _mkl.SubscribeTo(VirtualKeyCode.MediaPlayPause);
             _mkl.SubscribeTo(VirtualKeyCode.MediaStop);
-            _mkl.SubscribedKeyPressed += (_) => CheckState();
+            _mkl.SubscribedKeyPressed += _ => CheckState();
 
             _procs = Process.GetProcessesByName("Spotify");
         }
@@ -55,6 +51,8 @@ namespace SpotifyVolumeExtension
             Console.WriteLine("[SpotifyMonitor] Waiting for music to start playing.");
 
             double sleep = 1;
+
+            _sc.SetAutoRefresh(true);
             while (!await GetPlayingStatus())
             {
                 var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
@@ -64,6 +62,7 @@ namespace SpotifyVolumeExtension
                 if (completedTask == failureWaitTask) return;
                 if (sleep < 20) sleep *= 1.5;
             }
+
             Console.WriteLine("[SpotifyMonitor] Started. Now monitoring activity.");
 
             _pollThread = new Thread(PollSpotifyStatus);
@@ -90,6 +89,8 @@ namespace SpotifyVolumeExtension
             _pollThread?.Join();
             _failure.Set();
 
+            _sc.SetAutoRefresh(false);
+
             lock (_start)
             {
                 _failure.Reset();
@@ -103,9 +104,11 @@ namespace SpotifyVolumeExtension
             }
         }
 
-        public async Task<bool> GetPlayingStatus() => SpotifyIsRunning() && await IsPlayingMusic();
+        public async Task<bool> GetPlayingStatus()
+            => SpotifyIsRunning() && await IsPlayingMusic();
 
-        private bool SpotifyIsRunning() => _procs.Any(x => !x.HasExited);
+        private bool SpotifyIsRunning()
+            => _procs.Count(x => !x.HasExited) > 0;
 
         private async Task<bool> IsPlayingMusic()
         {
@@ -115,8 +118,6 @@ namespace SpotifyVolumeExtension
 
         public void Dispose()
         {
-            _svc.Dispose();
-            _vg.Dispose();
             _sc.Dispose();
             _shouldExit.Dispose();
             _mkl.Dispose();

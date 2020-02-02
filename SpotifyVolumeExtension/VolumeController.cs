@@ -11,14 +11,15 @@ namespace SpotifyVolumeExtension
         protected bool Running { get; private set; }
         protected int BaselineVolume { get; set; }
         protected object _lock { get; }
+
         protected abstract int GetBaselineVolume();
         protected abstract void SetNewVolume(int volume);
         protected abstract void Dispose(bool disposing);
 
-        protected VolumeController(string name)
+        protected VolumeController()
         {
+            Name = GetType().Name;
             _volumeControllers.Add(this);
-            Name = name;
             _lock = new object();
         }
 

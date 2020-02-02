@@ -4,12 +4,12 @@ using System;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class VolumeGuard : VolumeController, IObserver<DeviceVolumeChangedArgs>
+    public sealed class WindowsVolumeGuard : VolumeController, IObserver<DeviceVolumeChangedArgs>
     {
         private readonly CoreAudioDevice _audioDevice;
         private readonly CoreAudioController _coreAudioController;
 
-        public VolumeGuard() : base("VolumeGuard")
+        public WindowsVolumeGuard()
         {
             _coreAudioController = new CoreAudioController();
             _audioDevice = _coreAudioController.DefaultPlaybackDevice;
@@ -21,7 +21,7 @@ namespace SpotifyVolumeExtension
 
         protected override async void SetNewVolume(int volume)
         {
-             await _audioDevice.SetVolumeAsync(volume);
+            await _audioDevice.SetVolumeAsync(volume);
         }
 
         public void OnCompleted()

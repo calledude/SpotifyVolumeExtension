@@ -29,7 +29,7 @@ namespace SpotifyVolumeExtension
             => Stop();
 
         public void OnError(Exception error)
-            => Console.WriteLine(error.StackTrace);
+            => Console.WriteLine(error.ToString());
 
         public async void OnNext(DeviceVolumeChangedArgs value)
         {

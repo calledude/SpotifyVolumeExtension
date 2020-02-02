@@ -12,7 +12,7 @@ namespace SpotifyVolumeExtension
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
-            this._sc = sc;
+            _sc = sc;
             _mkl = new MediaKeyListener();
 
             var debounceConfig = (TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(250));

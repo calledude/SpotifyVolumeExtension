@@ -47,7 +47,7 @@ namespace SpotifyVolumeExtension
             return playbackContext.Device.VolumePercent;
         }
 
-        private async void VolumeKeyPressed(MediaKeyEventArgs m)
+        private async Task VolumeKeyPressed(MediaKeyEventArgs m)
         {
             using (_ = await _lock.EnterAsync())
             {

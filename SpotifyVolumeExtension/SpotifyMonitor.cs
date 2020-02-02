@@ -24,7 +24,7 @@ namespace SpotifyVolumeExtension
             _statusController = new StatusController(this);
 
             _sc = sc ?? throw new ArgumentNullException(nameof(sc));
-            sc.NoActivePlayer += CheckState;
+            sc.NoActivePlayer += async () => await CheckState();
 
             _mkl = new MediaKeyListener();
 
@@ -71,20 +71,21 @@ namespace SpotifyVolumeExtension
 
         //Checks if Spotify is running/playing music
         //if the status changes, subscribers (Volume controllers) to the event are alerted.
-        private void PollSpotifyStatus()
+        private async void PollSpotifyStatus()
         {
             do
             {
-                CheckState();
+                await CheckState();
             } while (!_shouldExit.WaitOne(15000));
         }
 
-        private void CheckState() => _statusController.CheckState();
+        private async Task CheckState()
+            => await _statusController.CheckState();
 
-        private void SpotifyExited(object sender, EventArgs e)
+        private async void SpotifyExited(object sender, EventArgs e)
         {
             Console.WriteLine("[SpotifyMonitor] No Spotify process active.");
-            CheckState();
+            await CheckState();
             _shouldExit.Set();
             _pollThread?.Join();
             _failure.Set();

@@ -13,19 +13,16 @@ namespace SpotifyVolumeExtension
             _sm = sm ?? throw new ArgumentNullException(nameof(sm));
         }
 
-        public void CheckState()
+        public async Task CheckState()
         {
-            Task.Run(async () =>
-            {
-                //Give spotify a chance to catch up, in case 'state' is in fact the state we are looking to change to. 
-                await Task.Delay(500);
-                var state = await _sm.GetPlayingStatus();
+            //Give spotify a chance to catch up, in case 'state' is in fact the state we are looking to change to. 
+            await Task.Delay(500);
+            var state = await _sm.GetPlayingStatus();
 
-                if (state == _lastState) return;
+            if (state == _lastState) return;
 
-                _lastState = state;
-                await OnStateChange(state);
-            });
+            _lastState = state;
+            await OnStateChange(state);
         }
 
         private async Task OnStateChange(bool newState)

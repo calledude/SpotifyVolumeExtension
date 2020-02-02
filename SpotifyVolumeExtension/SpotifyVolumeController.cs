@@ -8,15 +8,16 @@ namespace SpotifyVolumeExtension
     {
         private readonly MediaKeyListener _mkl;
         private readonly SpotifyClient _sc;
-        private DateTime _lastVolumeChange;
         private int _lastVolume;
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
             this._sc = sc;
             _mkl = new MediaKeyListener();
-            _mkl.SubscribeTo(VirtualKeyCode.VolumeUp);
-            _mkl.SubscribeTo(VirtualKeyCode.VolumeDown);
+
+            var debounceConfig = (TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(250));
+            _mkl.SubscribeTo(VirtualKeyCode.VolumeUp, debounceConfig);
+            _mkl.SubscribeTo(VirtualKeyCode.VolumeDown, debounceConfig);
         }
 
         protected override void Start()
@@ -31,24 +32,6 @@ namespace SpotifyVolumeExtension
         {
             _mkl.SubscribedKeyPressed -= VolumeKeyPressed;
             base.Stop();
-        }
-
-        private void UpdateVolume()
-        {
-            if (DateTime.Now - _lastVolumeChange < TimeSpan.FromMilliseconds(50))
-            {
-                Thread.Sleep(250);
-            }
-
-            lock (_lock)
-            {
-                if (_lastVolume != BaselineVolume)
-                {
-                    SetNewVolume(BaselineVolume);
-                    _lastVolumeChange = DateTime.Now;
-                    _lastVolume = BaselineVolume;
-                }
-            }
         }
 
         //Spotify web api might not be fast enough to realize we have begun playing music
@@ -73,16 +56,21 @@ namespace SpotifyVolumeExtension
 
                 if (BaselineVolume > 100) BaselineVolume = 100;
                 else if (BaselineVolume < 0) BaselineVolume = 0;
+
+                SetNewVolume(BaselineVolume);
             }
-            UpdateVolume();
         }
 
         protected override void SetNewVolume(int volume)
         {
+            if (_lastVolume == volume)
+                return;
+
             var err = _sc.Api.SetVolume(volume);
             if (err.Error == null)
             {
                 Console.WriteLine($"[{Name}] Changed volume to {volume.ToString()}%");
+                _lastVolume = volume;
             }
             else
             {

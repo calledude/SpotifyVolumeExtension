@@ -1,32 +1,82 @@
-﻿using System;
+﻿using LowLevelInput.Hooks;
+using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class StatusController
+    public sealed class StatusController : IDisposable
     {
         private readonly SpotifyMonitor _sm;
+        private readonly MediaKeyListener _mkl;
         private bool _lastState;
+        private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
+        private readonly Timer _queueTimer;
 
         public StatusController(SpotifyMonitor sm)
         {
+            _apiCallQueue = new ConcurrentQueue<Func<Task>>();
+            _queueTimer = new Timer(500);
+            _queueTimer.Elapsed += RunQueuedApiCalls;
+            _queueTimer.Enabled = true;
+
+            _mkl = new MediaKeyListener();
+
+            _mkl.SubscribeTo(VirtualKeyCode.MediaPlayPause);
+            _mkl.SubscribeTo(VirtualKeyCode.MediaStop);
+            _mkl.SubscribedKeyPressed += CheckStateInternal;
+
             _sm = sm ?? throw new ArgumentNullException(nameof(sm));
         }
 
-        public async Task CheckState()
+        private async void RunQueuedApiCalls(object sender, ElapsedEventArgs e)
         {
-            //Give spotify a chance to catch up, in case 'state' is in fact the state we are looking to change to. 
+            if (_apiCallQueue.TryDequeue(out var task))
+            {
+                await task.Invoke();
+            }
+        }
+
+        private async Task CheckStateInternal(MediaKeyEventArgs m)
+        {
+            bool newState;
+            if (m.Key == VirtualKeyCode.MediaPlayPause)
+            {
+                newState = !_lastState;
+            }
+            else //VirtualKeyCode.MediaStop
+            {
+                newState = false;
+            }
+
+            // Announce state change, wait 500ms, check again to make sure it was the correct one
+            // This is a bit of a hack to enable more responsive volume-lock toggling
+            await OnStateChange(newState);
+
             await Task.Delay(500);
-            var state = await _sm.GetPlayingStatus();
+            CheckState();
+        }
 
-            if (state == _lastState) return;
+        public void CheckState()
+        {
+            if (!_apiCallQueue.IsEmpty)
+                return;
 
-            _lastState = state;
-            await OnStateChange(state);
+            _apiCallQueue.Enqueue(async () =>
+            {
+                var state = await _sm.GetPlayingStatus();
+                await OnStateChange(state);
+            });
         }
 
         private async Task OnStateChange(bool newState)
         {
+            if (newState == _lastState)
+                return;
+
+            _lastState = newState;
+
             if (newState)
             {
                 await VolumeController.StartAll();
@@ -35,6 +85,11 @@ namespace SpotifyVolumeExtension
             {
                 VolumeController.StopAll();
             }
+        }
+
+        public void Dispose()
+        {
+            _mkl.Dispose();
         }
     }
 }

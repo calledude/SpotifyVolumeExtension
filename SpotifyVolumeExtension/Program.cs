@@ -9,11 +9,11 @@ namespace SpotifyVolumeExtension
             var sc = new SpotifyClient();
             await sc.Authenticate();
 
-            var sm = new SpotifyMonitor(sc);
-            sm.Start();
-
             var svc = new SpotifyVolumeController(sc);
             var vg = new WindowsVolumeGuard();
+
+            var sm = new SpotifyMonitor(sc);
+            await sm.Start();
 
             var cc = new ConsoleController();
             cc.RegisterDisposables(svc, vg, sc, sm);

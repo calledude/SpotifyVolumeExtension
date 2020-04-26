@@ -87,9 +87,7 @@ namespace SpotifyVolumeExtension
         }
 
         private void Log(string message)
-        {
-            Console.WriteLine($"[{GetType().Name}] {message}");
-        }
+            => Console.WriteLine($"[{GetType().Name}] {message}");
 
         private void CheckState()
             => _statusController.CheckState();
@@ -115,9 +113,10 @@ namespace SpotifyVolumeExtension
             {
                 _failure.Reset();
 
-                while (_procs.Length > 0) //Wait for all Spotify.exe processes to exit
+                //Wait for all Spotify.exe processes to exit
+                while (SpotifyIsRunning())
                 {
-                    _procs = _procs.AsParallel().Where(x => !x.HasExited).ToArray();
+                    await Task.Delay(50);
                 }
 
                 await Start();

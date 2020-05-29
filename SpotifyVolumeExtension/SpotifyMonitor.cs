@@ -97,7 +97,7 @@ namespace SpotifyVolumeExtension
             Log("No Spotify process active.");
             CheckState();
 
-            _cts.Cancel();
+            _cts?.Cancel();
 
             if (_pollTask != null)
             {

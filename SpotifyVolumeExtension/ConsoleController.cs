@@ -6,16 +6,16 @@ using System.Windows.Forms;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class ConsoleController
+    public static class ConsoleController
     {
         private static readonly List<IDisposable> _disposables = new List<IDisposable>();
         private static readonly NotifyIcon _notifyIcon = new NotifyIcon();
         private static bool _visible = true;
 
         private delegate bool EventHandler();
-        private static EventHandler _handler;
+        private static readonly EventHandler _handler;
 
-        public ConsoleController()
+        static ConsoleController()
         {
             Console.Title = "SpotifyVolumeExtension";
             _notifyIcon.DoubleClick += ToggleVisibility;
@@ -34,16 +34,14 @@ namespace SpotifyVolumeExtension
             SetConsoleCtrlHandler(_handler, true);
         }
 
-        public void Start()
+        public static void Start()
         {
             ToggleVisibility(null, null);
             Application.Run();
         }
 
-        public void RegisterDisposables(params IDisposable[] disposables)
-        {
-            _disposables.AddRange(disposables);
-        }
+        public static void RegisterDisposables(params IDisposable[] disposables)
+            => _disposables.AddRange(disposables);
 
         private static void CleanExit(object sender, EventArgs e)
         {
@@ -66,6 +64,7 @@ namespace SpotifyVolumeExtension
             {
                 disposable.Dispose();
             }
+
             _notifyIcon.Dispose();
             Application.Exit();
             return true;
@@ -82,7 +81,7 @@ namespace SpotifyVolumeExtension
 
         private static void SetConsoleWindowVisibility(bool visible)
         {
-            IntPtr hWnd = FindWindow(null, Console.Title);
+            var hWnd = FindWindow(null, Console.Title);
             if (hWnd != IntPtr.Zero)
             {
                 if (visible) ShowWindow(hWnd, 1); //1 = SW_SHOWNORMAL           

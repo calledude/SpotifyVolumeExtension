@@ -3,15 +3,12 @@ using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
     public sealed class SpotifyClient : IDisposable
     {
-        private readonly string _name;
-        private readonly AutoResetEvent _authWait;
         private readonly TokenSwapWebAPIFactory _authFactory;
 
         public SpotifyWebAPI Api { get; private set; }
@@ -19,10 +16,6 @@ namespace SpotifyVolumeExtension
 
         public SpotifyClient()
         {
-            _name = GetType().Name;
-
-            _authWait = new AutoResetEvent(false);
-
             _authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
             {
                 Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
@@ -51,16 +44,20 @@ namespace SpotifyVolumeExtension
             }
         }
 
-        public async Task Authenticate()
+        public async Task<bool> Authenticate()
         {
             Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout.ToString()} seconds");
 
             Api = await _authFactory.GetWebApiAsync();
 
-            Api.OnError += OnError;
+            if (Api == default)
+            {
+                return false;
+            }
 
-            _authWait.WaitOne(); //Wait for response
-            Log("Successfully authenticated.");
+            Api.OnError += OnError;
+            Api.UseAutoRetry = true;
+            return true;
         }
 
         public async void SetAutoRefresh(bool autoRefresh)
@@ -84,15 +81,12 @@ namespace SpotifyVolumeExtension
             => Log("Refreshed token.");
 
         private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
-            => _authWait.Set();
+            => Log("Successfully authenticated.");
 
         private void Log(string message)
-            => Console.WriteLine($"[{_name}] {message}");
+            => Console.WriteLine($"[{nameof(SpotifyClient)}] {message}");
 
         public void Dispose()
-        {
-            _authWait.Dispose();
-            Api.Dispose();
-        }
+            => Api.Dispose();
     }
 }

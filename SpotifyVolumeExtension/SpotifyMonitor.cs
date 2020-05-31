@@ -9,7 +9,7 @@ namespace SpotifyVolumeExtension
 {
     public sealed class SpotifyMonitor : IDisposable
     {
-        private readonly SpotifyClient _sc;
+        private readonly SpotifyClient _spotifyClient;
         private readonly AsyncMonitor _start;
         private CancellationTokenSource _cts;
         private readonly StatusController _statusController;
@@ -23,7 +23,7 @@ namespace SpotifyVolumeExtension
             _failure = new AsyncManualResetEvent(false);
             _statusController = new StatusController(this);
 
-            _sc = sc ?? throw new ArgumentNullException(nameof(sc));
+            _spotifyClient = sc ?? throw new ArgumentNullException(nameof(sc));
             sc.NoActivePlayer += CheckState;
 
             _procs = Process.GetProcessesByName("Spotify");
@@ -35,7 +35,7 @@ namespace SpotifyVolumeExtension
             await WaitForSpotifyProcess();
             Log("Spotify process detected.");
 
-            _sc.SetAutoRefresh(true);
+            _spotifyClient.SetAutoRefresh(true);
 
             Log("Waiting for music to start playing.");
             if (!await TryWaitForPlaybackActivation())
@@ -107,7 +107,7 @@ namespace SpotifyVolumeExtension
 
             _failure.Set();
 
-            _sc.SetAutoRefresh(false);
+            _spotifyClient.SetAutoRefresh(false);
 
             using (_ = await _start.EnterAsync())
             {
@@ -131,13 +131,13 @@ namespace SpotifyVolumeExtension
 
         private async Task<bool> IsPlayingMusic()
         {
-            var pb = await Retry.Wrap(() => _sc.Api.GetPlaybackAsync());
+            var pb = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
             return pb.IsPlaying;
         }
 
         public void Dispose()
         {
-            _sc.Dispose();
+            _spotifyClient.Dispose();
             _statusController.Dispose();
         }
     }

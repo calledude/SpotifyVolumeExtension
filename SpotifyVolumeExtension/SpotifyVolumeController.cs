@@ -7,12 +7,12 @@ namespace SpotifyVolumeExtension
     public sealed class SpotifyVolumeController : VolumeController
     {
         private readonly MediaKeyListener _mkl;
-        private readonly SpotifyClient _sc;
+        private readonly SpotifyClient _spotifyClient;
         private int _lastVolume;
 
         public SpotifyVolumeController(SpotifyClient sc)
         {
-            _sc = sc;
+            _spotifyClient = sc;
             _mkl = new MediaKeyListener();
 
             var debounceConfig = (TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(250));
@@ -38,11 +38,11 @@ namespace SpotifyVolumeExtension
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
         protected override async Task<int> GetBaselineVolume()
         {
-            var playbackContext = await Retry.Wrap(() => _sc.Api.GetPlaybackAsync());
+            var playbackContext = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
             while (playbackContext.Device == null)
             {
                 await Task.Delay(500);
-                playbackContext = await Retry.Wrap(() => _sc.Api.GetPlaybackAsync());
+                playbackContext = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
             }
             return playbackContext.Device.VolumePercent;
         }
@@ -66,7 +66,7 @@ namespace SpotifyVolumeExtension
             if (_lastVolume == BaselineVolume)
                 return;
 
-            var err = await Retry.Wrap(() => _sc.Api.SetVolumeAsync(BaselineVolume));
+            var err = await Retry.Wrap(() => _spotifyClient.Api.SetVolumeAsync(BaselineVolume));
             if (err.Error == null)
             {
                 Console.WriteLine($"[{Name}] Changed volume to {BaselineVolume.ToString()}%");

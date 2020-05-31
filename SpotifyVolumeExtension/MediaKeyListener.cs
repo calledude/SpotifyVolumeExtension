@@ -8,6 +8,7 @@ namespace SpotifyVolumeExtension
     public sealed class MediaKeyListener : IDisposable
     {
         public event Func<MediaKeyEventArgs, Task> SubscribedKeyPressed;
+
         private readonly InputManager _inputManager;
         private int _presses;
         private readonly Dictionary<VirtualKeyCode, (TimeSpan, TimeSpan)> _debounceConfig;
@@ -35,12 +36,12 @@ namespace SpotifyVolumeExtension
 
                 if (SubscribedKeyPressed != null)
                 {
+                    _lastEvent = DateTime.Now;
                     await SubscribedKeyPressed.Invoke(new MediaKeyEventArgs()
                     {
                         Presses = _presses,
                         Key = key
                     });
-                    _lastEvent = DateTime.Now;
                 }
 
                 _presses = 0;
@@ -58,8 +59,6 @@ namespace SpotifyVolumeExtension
         }
 
         public void Dispose()
-        {
-            _inputManager.Dispose();
-        }
+            => _inputManager.Dispose();
     }
 }

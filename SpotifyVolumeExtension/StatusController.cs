@@ -1,4 +1,5 @@
 ﻿using LowLevelInput.Hooks;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -13,9 +14,11 @@ namespace SpotifyVolumeExtension
         private bool _lastState;
         private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
         private readonly Timer _queueTimer;
+        private readonly AsyncMonitor _startLock;
 
         public StatusController(SpotifyMonitor sm)
         {
+            _startLock = new AsyncMonitor();
             _apiCallQueue = new ConcurrentQueue<Func<Task>>();
             _queueTimer = new Timer(500);
             _queueTimer.Elapsed += RunQueuedApiCalls;
@@ -76,20 +79,20 @@ namespace SpotifyVolumeExtension
                 return;
 
             _lastState = newState;
-
-            if (newState)
+            using (_ = await _startLock.EnterAsync())
             {
-                await VolumeController.StartAll();
-            }
-            else
-            {
-                VolumeController.StopAll();
+                if (newState)
+                {
+                    await VolumeController.StartAll();
+                }
+                else
+                {
+                    VolumeController.StopAll();
+                }
             }
         }
 
         public void Dispose()
-        {
-            _mkl.Dispose();
-        }
+            => _mkl.Dispose();
     }
 }

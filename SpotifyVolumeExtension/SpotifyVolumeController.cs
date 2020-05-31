@@ -38,11 +38,11 @@ namespace SpotifyVolumeExtension
         //therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
         protected override async Task<int> GetBaselineVolume()
         {
-            var playbackContext = await _sc.Api.GetPlaybackAsync();
+            var playbackContext = await Retry.Wrap(() => _sc.Api.GetPlaybackAsync());
             while (playbackContext.Device == null)
             {
                 await Task.Delay(500);
-                playbackContext = await _sc.Api.GetPlaybackAsync();
+                playbackContext = await Retry.Wrap(() => _sc.Api.GetPlaybackAsync());
             }
             return playbackContext.Device.VolumePercent;
         }
@@ -66,7 +66,7 @@ namespace SpotifyVolumeExtension
             if (_lastVolume == BaselineVolume)
                 return;
 
-            var err = await _sc.Api.SetVolumeAsync(BaselineVolume);
+            var err = await Retry.Wrap(() => _sc.Api.SetVolumeAsync(BaselineVolume));
             if (err.Error == null)
             {
                 Console.WriteLine($"[{Name}] Changed volume to {BaselineVolume.ToString()}%");
@@ -79,8 +79,6 @@ namespace SpotifyVolumeExtension
         }
 
         protected override void Dispose(bool disposing)
-        {
-            _mkl.Dispose();
-        }
+            => _mkl.Dispose();
     }
 }

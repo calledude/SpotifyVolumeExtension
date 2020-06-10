@@ -61,16 +61,19 @@ namespace SpotifyVolumeExtension
             CheckState();
         }
 
+        public async Task<bool> CheckStateImmediate()
+        {
+            var state = await _sm.GetPlayingStatus();
+            await OnStateChange(state);
+            return _lastState;
+        }
+
         public void CheckState()
         {
             if (!_apiCallQueue.IsEmpty)
                 return;
 
-            _apiCallQueue.Enqueue(async () =>
-            {
-                var state = await _sm.GetPlayingStatus();
-                await OnStateChange(state);
-            });
+            _apiCallQueue.Enqueue(CheckStateImmediate);
         }
 
         private async Task OnStateChange(bool newState)

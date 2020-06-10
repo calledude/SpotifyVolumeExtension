@@ -44,20 +44,21 @@ namespace SpotifyVolumeExtension
             Log("Started. Now monitoring activity.");
 
             _cts = new CancellationTokenSource();
-            _pollTask = Task.Run(PollSpotifyStatus, _cts.Token);
+            _pollTask = Task.WhenAny(PollSpotifyStatus(), Task.Delay(Timeout.Infinite, _cts.Token));
         }
 
         private async Task<bool> TryWaitForPlaybackActivation()
         {
             double sleep = 1;
-            while (!await GetPlayingStatus())
+
+            while (!await _statusController.CheckStateImmediate())
             {
                 var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
                 var failureWaitTask = _failure.WaitAsync();
                 var completedTask = await Task.WhenAny(timeoutTask, failureWaitTask);
 
                 if (completedTask == failureWaitTask) return false;
-                if (sleep < 20) sleep *= 1.5;
+                if (sleep < 20) sleep *= 1.35;
             }
 
             return true;

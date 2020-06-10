@@ -3,13 +3,14 @@ using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 using System;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace SpotifyVolumeExtension
 {
     public sealed class SpotifyClient : IDisposable
     {
         private readonly TokenSwapWebAPIFactory _authFactory;
+        private readonly AutoResetEvent _authWait;
 
         public SpotifyWebAPI Api { get; private set; }
         public event Action NoActivePlayer;
@@ -26,6 +27,9 @@ namespace SpotifyVolumeExtension
             _authFactory.OnAccessTokenExpired += OnTokenExpired;
             _authFactory.OnAuthSuccess += OnAuthSuccess;
             _authFactory.OnTokenRefreshSuccess += OnTokenRefresh;
+            _authFactory.OnAuthFailure += OnAuthFailure;
+
+            _authWait = new AutoResetEvent(false);
         }
 
         private void OnError(Error error)
@@ -44,20 +48,16 @@ namespace SpotifyVolumeExtension
             }
         }
 
-        public async Task<bool> Authenticate()
+        public void Authenticate()
         {
             Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout.ToString()} seconds");
 
-            Api = await _authFactory.GetWebApiAsync();
+            Api = _authFactory.GetWebApi();
 
-            if (Api == default)
-            {
-                return false;
-            }
+            _authWait.WaitOne();
 
             Api.OnError += OnError;
             Api.UseAutoRetry = true;
-            return true;
         }
 
         public async void SetAutoRefresh(bool autoRefresh)
@@ -81,7 +81,27 @@ namespace SpotifyVolumeExtension
             => Log("Refreshed token.");
 
         private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
-            => Log("Successfully authenticated.");
+        {
+            _authWait.Set();
+            Log("Successfully authenticated.");
+        }
+
+        private async void OnAuthFailure(object sender, AuthFailureEventArgs e)
+        {
+            if (Api == default)
+            {
+                Log($"Authentication failed: {e.Error} - Retrying.");
+
+                Api = _authFactory.GetWebApi();
+                return;
+            }
+
+            if (Api.Token == default || Api.Token.IsExpired())
+            {
+                Log($"Refreshing token failed: {e.Error} - Retrying.");
+                await _authFactory.RefreshAuthAsync();
+            }
+        }
 
         private void Log(string message)
             => Console.WriteLine($"[{nameof(SpotifyClient)}] {message}");

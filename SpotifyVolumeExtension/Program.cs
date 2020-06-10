@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
@@ -8,12 +7,7 @@ namespace SpotifyVolumeExtension
         public static async Task Main()
         {
             var sc = new SpotifyClient();
-
-            while (!await sc.Authenticate())
-            {
-                Console.WriteLine("Authentication failed. Trying again in 1s.");
-                await Task.Delay(1000);
-            }
+            sc.Authenticate();
 
             var svc = new SpotifyVolumeController(sc);
             var vg = new WindowsVolumeGuard();

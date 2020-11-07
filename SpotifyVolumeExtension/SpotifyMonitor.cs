@@ -133,7 +133,7 @@ namespace SpotifyVolumeExtension
         private async Task<bool> IsPlayingMusic()
         {
             var pb = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
-            return pb.IsPlaying;
+            return pb?.IsPlaying ?? false;
         }
 
         public void Dispose()

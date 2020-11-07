@@ -39,7 +39,7 @@ namespace SpotifyVolumeExtension
         protected override async Task<int> GetBaselineVolume()
         {
             var playbackContext = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
-            while (playbackContext.Device == null)
+            while (playbackContext?.Device == null)
             {
                 await Task.Delay(500);
                 playbackContext = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
@@ -67,13 +67,15 @@ namespace SpotifyVolumeExtension
                 return;
 
             var err = await Retry.Wrap(() => _spotifyClient.Api.SetVolumeAsync(BaselineVolume));
-            if (err.Error == null)
+
+            if (err != null && err.Error == null)
             {
                 Console.WriteLine($"[{Name}] Changed volume to {BaselineVolume.ToString()}%");
                 _lastVolume = BaselineVolume;
             }
             else
             {
+                Console.WriteLine($"[{Name}] Failed to change volume.");
                 BaselineVolume = _lastVolume;
             }
         }

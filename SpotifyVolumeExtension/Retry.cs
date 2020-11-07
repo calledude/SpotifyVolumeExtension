@@ -17,8 +17,14 @@ namespace SpotifyVolumeExtension
                     retries++;
                     return await wrapSubject();
                 }
-                catch (Exception ex) when (retries < _maxRetries)
+                catch (Exception ex)
                 {
+                    if (retries >= _maxRetries)
+                    {
+                        Console.WriteLine("Max retries exceeded. Bailing.");
+                        return default;
+                    }
+
                     Console.WriteLine($"Retrying - {ex.GetType().Name} thrown.");
                     await Task.Delay(TimeSpan.FromMilliseconds(500));
                 }

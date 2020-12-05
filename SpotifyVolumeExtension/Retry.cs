@@ -8,6 +8,18 @@ namespace SpotifyVolumeExtension
         private const int _maxRetries = 5;
 
         public static async Task<T> Wrap<T>(Func<Task<T>> wrapSubject)
+            => await WrapInternal(wrapSubject);
+
+        public static async Task Wrap(Func<Task> wrapSubject)
+        {
+            await WrapInternal(async () =>
+            {
+                await wrapSubject();
+                return 1;
+            });
+        }
+
+        private static async Task<T> WrapInternal<T>(Func<Task<T>> wrapSubject)
         {
             var retries = 0;
             while (true)

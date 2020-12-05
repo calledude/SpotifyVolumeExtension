@@ -70,7 +70,7 @@ namespace SpotifyVolumeExtension
 
             if (autoRefresh && Api.Token.IsExpired())
             {
-                await _authFactory.RefreshAuthAsync();
+                await Retry.Wrap(() => _authFactory.RefreshAuthAsync());
             }
         }
 
@@ -99,7 +99,7 @@ namespace SpotifyVolumeExtension
             if (Api.Token == default || Api.Token.IsExpired())
             {
                 Log($"Refreshing token failed: {e.Error} - Retrying.");
-                await _authFactory.RefreshAuthAsync();
+                await Retry.Wrap(() => _authFactory.RefreshAuthAsync());
             }
         }
 

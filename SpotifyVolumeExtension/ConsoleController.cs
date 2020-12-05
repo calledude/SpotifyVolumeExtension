@@ -35,10 +35,7 @@ namespace SpotifyVolumeExtension
         }
 
         public static void Start()
-        {
-            ToggleVisibility(null, null);
-            Application.Run();
-        }
+            => Application.Run();
 
         public static void RegisterDisposables(params IDisposable[] disposables)
             => _disposables.AddRange(disposables);
@@ -47,6 +44,14 @@ namespace SpotifyVolumeExtension
         {
             Handler();
             Environment.Exit(0);
+        }
+
+        public static void Hide()
+        {
+            if (!_visible)
+                return;
+
+            ToggleVisibility(null, null);
         }
 
         private static void ToggleVisibility(object sender, EventArgs e)

@@ -6,6 +6,8 @@ namespace SpotifyVolumeExtension
     {
         public static async Task Main()
         {
+            var messageLoopTask = Task.Factory.StartNew(ConsoleController.Start, TaskCreationOptions.LongRunning);
+
             var sc = new SpotifyClient();
             sc.Authenticate();
 
@@ -15,8 +17,10 @@ namespace SpotifyVolumeExtension
             var sm = new SpotifyMonitor(sc);
             await sm.Start();
 
+            ConsoleController.Hide();
             ConsoleController.RegisterDisposables(svc, vg, sc, sm);
-            ConsoleController.Start();
+
+            await messageLoopTask;
         }
     }
 }

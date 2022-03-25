@@ -1,50 +1,42 @@
-﻿using AudioSwitcher.AudioApi;
-using AudioSwitcher.AudioApi.CoreAudio;
-using System;
+﻿using NAudio.CoreAudioApi;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class WindowsVolumeGuard : VolumeController, IObserver<DeviceVolumeChangedArgs>
+    public sealed class WindowsVolumeGuard : VolumeController
     {
-        private readonly CoreAudioDevice _audioDevice;
-        private readonly CoreAudioController _coreAudioController;
+        private readonly MMDevice _audioDeviceNaudio;
+
+        private int SystemVolume
+        {
+            get => (int)(_audioDeviceNaudio.AudioEndpointVolume.MasterVolumeLevelScalar * 100);
+            set => _audioDeviceNaudio.AudioEndpointVolume.MasterVolumeLevelScalar = value / 100.0f;
+        }
 
         public WindowsVolumeGuard()
         {
-            _coreAudioController = new CoreAudioController();
-            _audioDevice = _coreAudioController.DefaultPlaybackDevice;
-            _audioDevice.VolumeChanged.Subscribe(this);
+            _audioDeviceNaudio = new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            _audioDeviceNaudio.AudioEndpointVolume.OnVolumeNotification += OnVolumeChange;
         }
 
-        protected override async Task<int> GetBaselineVolume()
-            => (int)await _audioDevice.GetVolumeAsync();
+        protected override Task<int> GetBaselineVolume()
+            => Task.FromResult(SystemVolume);
 
-        protected override async Task SetNewVolume()
+        protected override Task SetNewVolume()
         {
-            await _audioDevice.SetVolumeAsync(BaselineVolume);
+            SystemVolume = BaselineVolume;
+            return Task.CompletedTask;
         }
 
-        public void OnCompleted()
-            => Stop();
-
-        public void OnError(Exception error)
-            => Console.WriteLine(error.ToString());
-
-        public async void OnNext(DeviceVolumeChangedArgs value)
+        private async void OnVolumeChange(AudioVolumeNotificationData data)
         {
-            using (_ = await _lock.EnterAsync())
-            {
-                if (!Running || (int)value.Volume == BaselineVolume)
-                    return;
+            if (!Running || (int)data.MasterVolume == BaselineVolume)
+                return;
 
-                await SetNewVolume();
-            }
+            await SetNewVolume();
         }
 
         protected override void Dispose(bool disposing)
-        {
-            _coreAudioController.Dispose();
-        }
+            => _audioDeviceNaudio.Dispose();
     }
 }

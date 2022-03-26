@@ -9,6 +9,8 @@ namespace SpotifyVolumeExtension
 {
     public sealed class SpotifyMonitor : IDisposable
     {
+        public StatusController StatusController { get; }
+
         private readonly SpotifyClient _spotifyClient;
         private readonly AsyncMonitor _start;
         private CancellationTokenSource _cts;
@@ -21,7 +23,7 @@ namespace SpotifyVolumeExtension
         {
             _start = new AsyncMonitor();
             _failure = new AsyncManualResetEvent(false);
-            _statusController = new StatusController(this);
+            StatusController = new StatusController(this);
 
             _spotifyClient = sc ?? throw new ArgumentNullException(nameof(sc));
             sc.NoActivePlayer += CheckState;
@@ -51,14 +53,16 @@ namespace SpotifyVolumeExtension
         {
             double sleep = 1;
 
-            while (!await _statusController.CheckStateImmediate())
+            while (!await StatusController.CheckStateImmediate())
             {
                 var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
                 var failureWaitTask = _failure.WaitAsync();
                 var completedTask = await Task.WhenAny(timeoutTask, failureWaitTask);
 
-                if (completedTask == failureWaitTask) return false;
-                if (sleep < 20) sleep *= 1.35;
+                if (completedTask == failureWaitTask)
+                    return false;
+                if (sleep < 20)
+                    sleep *= 1.35;
             }
 
             return true;
@@ -87,11 +91,11 @@ namespace SpotifyVolumeExtension
             } while (!_cts.IsCancellationRequested);
         }
 
-        private void Log(string message)
-            => Console.WriteLine($"[{GetType().Name}] {message}");
+        private static void Log(string message)
+            => Console.WriteLine($"[{nameof(SpotifyMonitor)}] {message}");
 
         private void CheckState()
-            => _statusController.CheckState();
+            => StatusController.CheckState();
 
         private async void SpotifyExited(object sender, EventArgs e)
         {
@@ -124,6 +128,9 @@ namespace SpotifyVolumeExtension
             }
         }
 
+        public async Task<PlaybackContext> GetPlaybackContext()
+            => await _spotifyClient.Api.GetPlaybackAsync();
+
         public async Task<bool> GetPlayingStatus()
             => SpotifyIsRunning() && await IsPlayingMusic();
 
@@ -132,14 +139,14 @@ namespace SpotifyVolumeExtension
 
         private async Task<bool> IsPlayingMusic()
         {
-            var pb = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
+            var pb = await Retry.Wrap(() => GetPlaybackContext());
             return pb?.IsPlaying ?? false;
         }
 
         public void Dispose()
         {
             _spotifyClient.Dispose();
-            _statusController.Dispose();
+            StatusController.Dispose();
         }
     }
 }

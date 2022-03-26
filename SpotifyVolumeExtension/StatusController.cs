@@ -1,5 +1,6 @@
-﻿using LowLevelInput.Hooks;
+﻿using H.Hooks;
 using Nito.AsyncEx;
+using SpotifyAPI.Web.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -7,95 +8,110 @@ using System.Timers;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class StatusController : IDisposable
-    {
-        private readonly SpotifyMonitor _sm;
-        private readonly MediaKeyListener _mkl;
-        private bool _lastState;
-        private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
-        private readonly Timer _queueTimer;
-        private readonly AsyncMonitor _startLock;
+	public sealed class StatusController : IDisposable
+	{
+		private bool _lastState;
+		private readonly SpotifyMonitor _sm;
+		private readonly MediaKeyListener _mkl;
+		private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
+		private readonly Timer _queueTimer;
+		private readonly AsyncMonitor _startLock;
 
-        public StatusController(SpotifyMonitor sm)
-        {
-            _startLock = new AsyncMonitor();
-            _apiCallQueue = new ConcurrentQueue<Func<Task>>();
-            _queueTimer = new Timer(500);
-            _queueTimer.Elapsed += RunQueuedApiCalls;
-            _queueTimer.Enabled = true;
+		public event Action<int> VolumeReport;
 
-            _mkl = new MediaKeyListener();
+		public StatusController(SpotifyMonitor sm)
+		{
+			_startLock = new AsyncMonitor();
+			_apiCallQueue = new ConcurrentQueue<Func<Task>>();
+			_queueTimer = new Timer(500);
+			_queueTimer.Elapsed += RunQueuedApiCalls;
+			_queueTimer.Enabled = true;
 
-            _mkl.SubscribeTo(VirtualKeyCode.MediaPlayPause);
-            _mkl.SubscribeTo(VirtualKeyCode.MediaStop);
-            _mkl.SubscribedKeyPressed += CheckStateInternal;
+			_mkl = new MediaKeyListener();
+			_mkl.Run();
 
-            _sm = sm ?? throw new ArgumentNullException(nameof(sm));
-        }
+			_mkl.SubscribeTo(Key.MediaPlayPause);
+			_mkl.SubscribeTo(Key.MediaStop);
+			_mkl.SubscribedKeyPressed += CheckStateInternal;
 
-        private async void RunQueuedApiCalls(object sender, ElapsedEventArgs e)
-        {
-            if (_apiCallQueue.TryDequeue(out var task))
-            {
-                await task.Invoke();
-            }
-        }
+			_sm = sm ?? throw new ArgumentNullException(nameof(sm));
+		}
 
-        private async Task CheckStateInternal(MediaKeyEventArgs m)
-        {
-            bool newState;
-            if (m.Key == VirtualKeyCode.MediaPlayPause)
-            {
-                newState = !_lastState;
-            }
-            else //VirtualKeyCode.MediaStop
-            {
-                newState = false;
-            }
+		private async void RunQueuedApiCalls(object sender, ElapsedEventArgs e)
+		{
+			if (_apiCallQueue.TryDequeue(out var task))
+			{
+				await task.Invoke();
+			}
+		}
 
-            // Announce state change, wait 500ms, check again to make sure it was the correct one
-            // This is a bit of a hack to enable more responsive volume-lock toggling
-            await OnStateChange(newState);
+		private async Task CheckStateInternal(MediaKeyEventArgs m)
+		{
+			var newState = m.Key switch
+			{
+				Key.MediaPlayPause => !_lastState,
+				Key.MediaStop => false,
+				// This can quite literally never happen but the compiler won't shut up about it
+				_ => throw new InvalidOperationException()
+			};
 
-            await Task.Delay(500);
-            CheckState();
-        }
+			// Announce state change, wait 500ms, check again to make sure it was the correct one
+			// This is a bit of a hack to enable more responsive volume-lock toggling
+			await OnStateChange(newState, null);
 
-        public async Task<bool> CheckStateImmediate()
-        {
-            var state = await _sm.GetPlayingStatus();
-            await OnStateChange(state);
-            return _lastState;
-        }
+			await Task.Delay(500);
+			CheckState();
+		}
 
-        public void CheckState()
-        {
-            if (!_apiCallQueue.IsEmpty)
-                return;
+		public async Task<bool> CheckStateImmediate()
+		{
+			if (_sm.SpotifyIsRunning())
+			{
+				var playbackContext = await _sm.GetPlaybackContext();
+				await OnStateChange(playbackContext.IsPlaying, playbackContext);
+			}
+			else
+			{
+				await OnStateChange(false, null);
+			}
 
-            _apiCallQueue.Enqueue(CheckStateImmediate);
-        }
+			return _lastState;
+		}
 
-        private async Task OnStateChange(bool newState)
-        {
-            if (newState == _lastState)
-                return;
+		public void CheckState()
+		{
+			if (!_apiCallQueue.IsEmpty)
+				return;
 
-            _lastState = newState;
-            using (_ = await _startLock.EnterAsync())
-            {
-                if (newState)
-                {
-                    await VolumeController.StartAll();
-                }
-                else
-                {
-                    VolumeController.StopAll();
-                }
-            }
-        }
+			_apiCallQueue.Enqueue(CheckStateImmediate);
+		}
 
-        public void Dispose()
-            => _mkl.Dispose();
-    }
+		private async Task OnStateChange(bool newState, PlaybackContext context)
+		{
+			using (_ = await _startLock.EnterAsync())
+			{
+				if (context?.Device != default)
+					VolumeReport?.Invoke(context.Device.VolumePercent);
+
+				if (newState == _lastState)
+					return;
+
+				_lastState = newState;
+				if (newState)
+				{
+					await VolumeController.StartAll();
+				}
+				else
+				{
+					VolumeController.StopAll();
+				}
+			}
+		}
+
+		public void Dispose()
+		{
+			_mkl.Dispose();
+			_queueTimer.Dispose();
+		}
+	}
 }

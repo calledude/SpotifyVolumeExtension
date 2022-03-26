@@ -2,109 +2,107 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Windows.Forms;
 
 namespace SpotifyVolumeExtension
 {
-    public static class ConsoleController
-    {
-        private static readonly List<IDisposable> _disposables = new();
-        private static readonly NotifyIcon _notifyIcon = new()
-        {
-            ContextMenuStrip = new ContextMenuStrip
-            {
-                Items =
-                {
-                    { "Show", null, ToggleVisibility },
-                    { "Exit", null, CleanExit }
-                }
-            },
+	public static class ConsoleController
+	{
+		private static readonly List<IDisposable> _disposables = new();
 
-            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath),
-            Visible = true,
-            Text = Application.ProductName
-        };
+		private static readonly NotifyIcon _notifyIcon = new()
+		{
+			ContextMenuStrip = new ContextMenuStrip
+			{
+				Items =
+				{
+					{ "Show", null, ToggleVisibility },
+					{ "Exit", null, CleanExit }
+				}
+			},
 
-        private static bool _visible = true;
+			Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath),
+			Visible = true,
+			Text = Application.ProductName
+		};
 
-        private delegate bool EventHandler();
-        private static readonly EventHandler _handler = new(Handler);
+		private static bool _visible = true;
 
-        static ConsoleController()
-        {
-            Console.Title = "SpotifyVolumeExtension";
-            _notifyIcon.DoubleClick += ToggleVisibility;
+		private delegate bool EventHandler();
 
-            SetConsoleCtrlHandler(_handler, true);
-        }
+		private static readonly EventHandler _handler = new(Handler);
 
-        public static void Start()
-            => Application.Run();
+		static ConsoleController()
+		{
+			Console.Title = "SpotifyVolumeExtension";
+			_notifyIcon.DoubleClick += ToggleVisibility;
 
-        public static void RegisterDisposables(params IDisposable[] disposables)
-            => _disposables.AddRange(disposables);
+			SetConsoleCtrlHandler(_handler, true);
+		}
 
-        private static void CleanExit(object sender, EventArgs e)
-        {
-            Handler();
-            Environment.Exit(0);
-        }
+		public static void Start()
+			=> Application.Run();
 
-        [SupportedOSPlatform("windows")]
-        public static void Hide()
-        {
-            if (!_visible)
-                return;
+		public static void RegisterDisposables(params IDisposable[] disposables)
+			=> _disposables.AddRange(disposables);
 
-            ToggleVisibility(null, null);
-        }
+		private static void CleanExit(object sender, EventArgs e)
+		{
+			Handler();
+			Environment.Exit(0);
+		}
 
-        [SupportedOSPlatform("windows")]
-        private static void ToggleVisibility(object sender, EventArgs e)
-        {
-            _visible = !_visible;
-            if (_visible)
-                _notifyIcon.ContextMenuStrip.Items[0].Text = "Hide";
-            else
-                _notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
+		public static void Hide()
+		{
+			if (!_visible)
+				return;
 
-            SetConsoleWindowVisibility(_visible);
-        }
+			ToggleVisibility(null, null);
+		}
 
-        private static bool Handler()
-        {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
+		private static void ToggleVisibility(object sender, EventArgs e)
+		{
+			_visible = !_visible;
+			if (_visible)
+				_notifyIcon.ContextMenuStrip.Items[0].Text = "Hide";
+			else
+				_notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
 
-            _notifyIcon.Dispose();
-            Application.Exit();
-            return true;
-        }
+			SetConsoleWindowVisibility(_visible);
+		}
 
-        [DllImport("Kernel32")]
-        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+		private static bool Handler()
+		{
+			foreach (var disposable in _disposables)
+			{
+				disposable.Dispose();
+			}
 
-        [DllImport("user32.dll")]
-        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+			_notifyIcon.Dispose();
+			Application.Exit();
+			return true;
+		}
 
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+		[DllImport("Kernel32")]
+		private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
 
-        [SupportedOSPlatform("windows")]
-        private static void SetConsoleWindowVisibility(bool visible)
-        {
-            var hWnd = FindWindow(null, Console.Title);
-            if (hWnd == IntPtr.Zero)
-                return;
+		[DllImport("user32.dll")]
+		private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
-            ShowWindow(hWnd, visible ? 1 : 0);
-            SetForegroundWindow(hWnd);
-        }
+		[DllImport("user32.dll")]
+		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-    }
+		private static void SetConsoleWindowVisibility(bool visible)
+		{
+			var hWnd = FindWindow(null, Console.Title);
+			if (hWnd == IntPtr.Zero)
+				return;
+
+			ShowWindow(hWnd, visible ? 1 : 0);
+			SetForegroundWindow(hWnd);
+		}
+
+		[DllImport("user32.dll")]
+		private static extern bool SetForegroundWindow(IntPtr hWnd);
+	}
 }

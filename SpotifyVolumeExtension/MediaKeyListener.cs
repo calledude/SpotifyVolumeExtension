@@ -2,7 +2,6 @@
 using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
-using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
@@ -18,7 +17,6 @@ namespace SpotifyVolumeExtension
 
 		private readonly AsyncMonitor _lock = new AsyncMonitor();
 
-		[SupportedOSPlatform("windows")]
 		public MediaKeyListener()
 		{
 			_debounceConfig = new Dictionary<Key, (TimeSpan, TimeSpan)>();

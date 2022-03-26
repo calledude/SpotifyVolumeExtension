@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Runtime.Versioning;
+using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace SpotifyVolumeExtension
 {

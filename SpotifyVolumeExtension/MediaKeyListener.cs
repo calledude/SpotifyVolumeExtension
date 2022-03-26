@@ -15,7 +15,7 @@ namespace SpotifyVolumeExtension
 		private DateTime _lastEvent;
 		private readonly LowLevelKeyboardHook _keyboardHook;
 
-		private readonly AsyncMonitor _lock = new AsyncMonitor();
+		private readonly AsyncMonitor _lock = new();
 
 		public MediaKeyListener()
 		{

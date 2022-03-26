@@ -37,7 +37,7 @@ namespace SpotifyVolumeExtension
 			Console.Title = "SpotifyVolumeExtension";
 			_notifyIcon.DoubleClick += ToggleVisibility;
 
-			SetConsoleCtrlHandler(_handler, true);
+			NativeMethods.SetConsoleCtrlHandler(_handler, true);
 		}
 
 		public static void Start()
@@ -68,7 +68,7 @@ namespace SpotifyVolumeExtension
 			else
 				_notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
 
-			SetConsoleWindowVisibility(_visible);
+			NativeMethods.SetConsoleWindowVisibility(_visible);
 		}
 
 		private static bool Handler()
@@ -83,26 +83,29 @@ namespace SpotifyVolumeExtension
 			return true;
 		}
 
-		[DllImport("Kernel32")]
-		private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
-
-		[DllImport("user32.dll")]
-		private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-
-		[DllImport("user32.dll")]
-		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-		private static void SetConsoleWindowVisibility(bool visible)
+		private static class NativeMethods
 		{
-			var hWnd = FindWindow(null, Console.Title);
-			if (hWnd == IntPtr.Zero)
-				return;
+			[DllImport("Kernel32")]
+			public static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
 
-			ShowWindow(hWnd, visible ? 1 : 0);
-			SetForegroundWindow(hWnd);
+			[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+			private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+			[DllImport("user32.dll")]
+			private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+			public static void SetConsoleWindowVisibility(bool visible)
+			{
+				var hWnd = FindWindow(null, Console.Title);
+				if (hWnd == IntPtr.Zero)
+					return;
+
+				ShowWindow(hWnd, visible ? 1 : 0);
+				SetForegroundWindow(hWnd);
+			}
+
+			[DllImport("user32.dll")]
+			private static extern bool SetForegroundWindow(IntPtr hWnd);
 		}
-
-		[DllImport("user32.dll")]
-		private static extern bool SetForegroundWindow(IntPtr hWnd);
 	}
 }

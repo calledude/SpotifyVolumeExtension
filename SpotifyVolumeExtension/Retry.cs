@@ -5,7 +5,7 @@ namespace SpotifyVolumeExtension
 {
     public static class Retry
     {
-        private const int _maxRetries = 5;
+        private const int MAXRETRIES = 5;
 
         public static async Task<T> Wrap<T>(Func<Task<T>> wrapSubject)
             => await WrapInternal(wrapSubject);
@@ -31,7 +31,7 @@ namespace SpotifyVolumeExtension
                 }
                 catch (Exception ex)
                 {
-                    if (retries >= _maxRetries)
+                    if (retries >= MAXRETRIES)
                     {
                         Console.WriteLine("Max retries exceeded. Bailing.");
                         return default;

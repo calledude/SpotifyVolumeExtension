@@ -44,13 +44,13 @@ namespace SpotifyVolumeExtension
             }
             else
             {
-                Log($"{error.Status.ToString()} {error.Message}");
+                Log($"{error.Status} {error.Message}");
             }
         }
 
         public void Authenticate()
         {
-            Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout.ToString()} seconds");
+            Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout} seconds");
 
             Api = _authFactory.GetWebApi();
 
@@ -65,7 +65,7 @@ namespace SpotifyVolumeExtension
             if (autoRefresh == _authFactory.AutoRefresh)
                 return;
 
-            Log($"Setting 'AutoRefresh' to: {autoRefresh.ToString()}");
+            Log($"Setting 'AutoRefresh' to: {autoRefresh}");
             _authFactory.AutoRefresh = autoRefresh;
 
             if (autoRefresh && Api.Token.IsExpired())
@@ -103,7 +103,7 @@ namespace SpotifyVolumeExtension
             }
         }
 
-        private void Log(string message)
+        private static void Log(string message)
             => Console.WriteLine($"[{nameof(SpotifyClient)}] {message}");
 
         public void Dispose()

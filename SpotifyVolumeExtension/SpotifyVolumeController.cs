@@ -26,6 +26,8 @@ namespace SpotifyVolumeExtension
 		{
 			await base.Start();
 
+			_mkl.Run();
+
 			_lastVolume = BaselineVolume;
 			_mkl.SubscribedKeyPressed += VolumeKeyPressed;
 			_statusController.VolumeReport += OnVolumeReport;

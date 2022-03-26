@@ -1,64 +1,77 @@
-﻿using LowLevelInput.Hooks;
+﻿using H.Hooks;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
-    public sealed class MediaKeyListener : IDisposable
-    {
-        public event Func<MediaKeyEventArgs, Task> SubscribedKeyPressed;
+	public sealed class MediaKeyListener : IDisposable
+	{
+		public event Func<MediaKeyEventArgs, Task> SubscribedKeyPressed;
 
-        private readonly InputManager _inputManager;
-        private int _presses;
-        private readonly Dictionary<VirtualKeyCode, (TimeSpan, TimeSpan)> _debounceConfig;
-        private DateTime _lastEvent;
+		private int _presses;
+		private readonly Dictionary<Key, (TimeSpan, TimeSpan)> _debounceConfig;
+		private DateTime _lastEvent;
+		private readonly LowLevelKeyboardHook _keyboardHook;
 
-        public MediaKeyListener()
-        {
-            _inputManager = new InputManager();
-            _inputManager.Initialize(false);
+		private readonly AsyncMonitor _lock = new AsyncMonitor();
 
-            _debounceConfig = new Dictionary<VirtualKeyCode, (TimeSpan, TimeSpan)>();
-        }
+		[SupportedOSPlatform("windows")]
+		public MediaKeyListener()
+		{
+			_debounceConfig = new Dictionary<Key, (TimeSpan, TimeSpan)>();
+			_keyboardHook = new();
+			_keyboardHook.OneUpEvent = false;
+			_keyboardHook.Down += OnKeyDown;
+			_keyboardHook.Up += OnKeyUp;
+		}
 
-        private async void KeyPressedEvent(VirtualKeyCode key, KeyState state)
-        {
-            if (KeyState.Up == state)
-            {
-                var (minimumWait, penalty) = _debounceConfig[key];
-                if (minimumWait != default
-                    && penalty != default
-                    && DateTime.Now - _lastEvent < minimumWait)
-                {
-                    await Task.Delay(penalty);
-                }
+		public void Run() => _keyboardHook.Start();
 
-                if (SubscribedKeyPressed != null)
-                {
-                    _lastEvent = DateTime.Now;
-                    await SubscribedKeyPressed.Invoke(new MediaKeyEventArgs()
-                    {
-                        Presses = _presses,
-                        Key = key
-                    });
-                }
+		private async void OnKeyDown(object sender, KeyboardEventArgs e)
+		{
+			if (!_debounceConfig.ContainsKey(e.CurrentKey))
+				return;
 
-                _presses = 0;
-            }
-            else if (KeyState.Down == state)
-            {
-                _presses++;
-            }
-        }
+			using var _ = _lock.Enter();
 
-        public void SubscribeTo(VirtualKeyCode key, (TimeSpan, TimeSpan) debounceConfig = default)
-        {
-            _debounceConfig.Add(key, debounceConfig);
-            _inputManager.RegisterEvent(key, KeyPressedEvent);
-        }
+			++_presses;
+		}
 
-        public void Dispose()
-            => _inputManager.Dispose();
-    }
+		private async void OnKeyUp(object sender, KeyboardEventArgs e)
+		{
+			if (!_debounceConfig.ContainsKey(e.CurrentKey))
+				return;
+
+			var (minimumWait, penalty) = _debounceConfig[e.CurrentKey];
+			if (minimumWait != default
+				&& penalty != default
+				&& DateTime.Now - _lastEvent < minimumWait)
+			{
+				await Task.Delay(penalty);
+			}
+
+			using var _ = _lock.Enter();
+
+			if (SubscribedKeyPressed != null)
+			{
+				_lastEvent = DateTime.Now;
+				await SubscribedKeyPressed.Invoke(new MediaKeyEventArgs()
+				{
+					Presses = _presses,
+					Key = e.CurrentKey
+				});
+			}
+
+			_presses = 0;
+		}
+
+		public void SubscribeTo(Key key, (TimeSpan, TimeSpan) debounceConfig = default)
+			=> _debounceConfig.Add(key, debounceConfig);
+
+		public void Dispose()
+			=> _keyboardHook.Dispose();
+	}
 }

@@ -16,11 +16,10 @@
 
   <ItemGroup>
     <PackageReference Include="EmbedIO" Version="3.2.0" />
-    <PackageReference Include="LowLevelInput.Net" Version="1.36.6" />
+    <PackageReference Include="H.Hooks" Version="1.4.19" />
     <PackageReference Include="NAudio" Version="2.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
-    <PackageReference Include="NonInvasiveKeyboardHookLibrary.Core" Version="2.1.0" />
     <PackageReference Include="Unosquare.Swan.Lite" Version="2.4.3" />
   </ItemGroup>
 

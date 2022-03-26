@@ -27,7 +27,6 @@ namespace SpotifyVolumeExtension
 
             _spotifyClient = sc ?? throw new ArgumentNullException(nameof(sc));
             sc.NoActivePlayer += CheckState;
-
         }
 
         public async Task Start()
@@ -36,7 +35,7 @@ namespace SpotifyVolumeExtension
             await _processService.WaitForProcessToStart();
             Log("Spotify process detected.");
 
-            _spotifyClient.SetAutoRefresh(true);
+            await _spotifyClient.SetAutoRefresh(true);
 
             Log("Waiting for music to start playing.");
             if (!await TryWaitForPlaybackActivation())
@@ -98,7 +97,7 @@ namespace SpotifyVolumeExtension
 
             _failure.Set();
 
-            _spotifyClient.SetAutoRefresh(false);
+            await _spotifyClient.SetAutoRefresh(false);
 
             using (_ = await _start.EnterAsync())
             {

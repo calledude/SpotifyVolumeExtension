@@ -4,6 +4,7 @@ using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension
 {
@@ -60,7 +61,7 @@ namespace SpotifyVolumeExtension
             Api.UseAutoRetry = true;
         }
 
-        public async void SetAutoRefresh(bool autoRefresh)
+        public async Task SetAutoRefresh(bool autoRefresh)
         {
             if (autoRefresh == _authFactory.AutoRefresh)
                 return;

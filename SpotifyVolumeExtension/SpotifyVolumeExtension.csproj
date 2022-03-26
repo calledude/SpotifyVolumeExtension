@@ -1,34 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-    <AnalysisLevel>latest</AnalysisLevel>
+	<OutputType>Exe</OutputType>
+	<TargetFramework>net6.0-windows</TargetFramework>
+	<UseWindowsForms>true</UseWindowsForms>
+	<AnalysisLevel>latest</AnalysisLevel>
 
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <PublishSingleFile Condition="'$(Configuration)' == 'Release'">true</PublishSingleFile>
+	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	<PublishSingleFile Condition="'$(Configuration)' == 'Release'">true</PublishSingleFile>
 
-    <RootNamespace>SpotifyVolumeExtension</RootNamespace>
-    <AssemblyName>SpotifyVolumeExtension</AssemblyName>
+	<RootNamespace>SpotifyVolumeExtension</RootNamespace>
+	<AssemblyName>SpotifyVolumeExtension</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EmbedIO" Version="3.2.0" />
-    <PackageReference Include="H.Hooks" Version="1.4.19" />
-    <PackageReference Include="NAudio" Version="2.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
-    <PackageReference Include="Unosquare.Swan.Lite" Version="2.4.3" />
+	<PackageReference Include="EmbedIO" Version="3.2.0" />
+	<PackageReference Include="H.Hooks" Version="1.4.19" />
+	<PackageReference Include="NAudio" Version="2.0.1" />
+	<PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+	<PackageReference Include="Nito.AsyncEx.Coordination" Version="5.1.2" />
+	<PackageReference Include="Unosquare.Swan.Lite" Version="2.4.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="SpotifyAPI.Web">
-      <HintPath>lib\SpotifyAPI.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="SpotifyAPI.Web.Auth">
-      <HintPath>lib\SpotifyAPI.Web.Auth.dll</HintPath>
-    </Reference>
+	<Reference Include="SpotifyAPI.Web">
+	  <HintPath>lib\SpotifyAPI.Web.dll</HintPath>
+	</Reference>
+	<Reference Include="SpotifyAPI.Web.Auth">
+	  <HintPath>lib\SpotifyAPI.Web.Auth.dll</HintPath>
+	</Reference>
   </ItemGroup>
 
 </Project>

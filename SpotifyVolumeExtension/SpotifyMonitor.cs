@@ -1,7 +1,6 @@
 ﻿using Nito.AsyncEx;
+using SpotifyAPI.Web.Models;
 using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,15 +11,16 @@ namespace SpotifyVolumeExtension
         public StatusController StatusController { get; }
 
         private readonly SpotifyClient _spotifyClient;
+        private readonly ProcessService _processService;
         private readonly AsyncMonitor _start;
         private CancellationTokenSource _cts;
-        private readonly StatusController _statusController;
         private readonly AsyncManualResetEvent _failure;
-        private Process[] _procs;
         private Task _pollTask;
 
         public SpotifyMonitor(SpotifyClient sc)
         {
+            _processService = new ProcessService("Spotify");
+            _processService.Exited += SpotifyExited;
             _start = new AsyncMonitor();
             _failure = new AsyncManualResetEvent(false);
             StatusController = new StatusController(this);
@@ -28,13 +28,12 @@ namespace SpotifyVolumeExtension
             _spotifyClient = sc ?? throw new ArgumentNullException(nameof(sc));
             sc.NoActivePlayer += CheckState;
 
-            _procs = Process.GetProcessesByName("Spotify");
         }
 
         public async Task Start()
         {
             Log("Waiting for Spotify to start...");
-            await WaitForSpotifyProcess();
+            await _processService.WaitForProcessToStart();
             Log("Spotify process detected.");
 
             _spotifyClient.SetAutoRefresh(true);
@@ -68,18 +67,6 @@ namespace SpotifyVolumeExtension
             return true;
         }
 
-        private async Task WaitForSpotifyProcess()
-        {
-            while (!SpotifyIsRunning())
-            {
-                await Task.Delay(750);
-                _procs = Process.GetProcessesByName("Spotify");
-            }
-
-            _procs[0].EnableRaisingEvents = true;
-            _procs[0].Exited += SpotifyExited;
-        }
-
         //Checks if Spotify is running/playing music
         //if the status changes, subscribers (Volume controllers) to the event are alerted.
         private async Task PollSpotifyStatus()
@@ -99,7 +86,6 @@ namespace SpotifyVolumeExtension
 
         private async void SpotifyExited(object sender, EventArgs e)
         {
-            Log("No Spotify process active.");
             CheckState();
 
             _cts?.Cancel();
@@ -117,13 +103,6 @@ namespace SpotifyVolumeExtension
             using (_ = await _start.EnterAsync())
             {
                 _failure.Reset();
-
-                //Wait for all Spotify.exe processes to exit
-                while (SpotifyIsRunning())
-                {
-                    await Task.Delay(50);
-                }
-
                 await Start();
             }
         }
@@ -134,8 +113,8 @@ namespace SpotifyVolumeExtension
         public async Task<bool> GetPlayingStatus()
             => SpotifyIsRunning() && await IsPlayingMusic();
 
-        private bool SpotifyIsRunning()
-            => _procs.Count(x => !x.HasExited) > 0;
+        public bool SpotifyIsRunning()
+            => _processService.ProcessIsRunning();
 
         private async Task<bool> IsPlayingMusic()
         {

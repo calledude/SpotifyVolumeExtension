@@ -28,7 +28,7 @@ namespace SpotifyVolumeExtension
 
 		public void Run() => _keyboardHook.Start();
 
-		private async void OnKeyDown(object sender, KeyboardEventArgs e)
+		private void OnKeyDown(object sender, KeyboardEventArgs e)
 		{
 			if (!_debounceConfig.ContainsKey(e.CurrentKey))
 				return;
@@ -51,7 +51,7 @@ namespace SpotifyVolumeExtension
 				await Task.Delay(penalty);
 			}
 
-			using var _ = _lock.Enter();
+			using var _ = await _lock.EnterAsync();
 
 			if (SubscribedKeyPressed != null)
 			{

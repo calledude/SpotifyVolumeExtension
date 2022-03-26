@@ -2,59 +2,58 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension
+namespace SpotifyVolumeExtension;
+
+public abstract class VolumeController : IDisposable
 {
-	public abstract class VolumeController : IDisposable
+	private static readonly List<VolumeController> _volumeControllers = new();
+
+	protected string Name { get; }
+	protected bool Running { get; private set; }
+	protected int BaselineVolume { get; set; }
+
+	protected abstract Task<int> GetBaselineVolume();
+	protected abstract Task SetNewVolume();
+	protected abstract void Dispose(bool disposing);
+
+	protected VolumeController()
 	{
-		private static readonly List<VolumeController> _volumeControllers = new();
+		Name = GetType().Name;
+		_volumeControllers.Add(this);
+	}
 
-		protected string Name { get; }
-		protected bool Running { get; private set; }
-		protected int BaselineVolume { get; set; }
-
-		protected abstract Task<int> GetBaselineVolume();
-		protected abstract Task SetNewVolume();
-		protected abstract void Dispose(bool disposing);
-
-		protected VolumeController()
+	public static async Task StartAll()
+	{
+		foreach (var vc in _volumeControllers)
 		{
-			Name = GetType().Name;
-			_volumeControllers.Add(this);
+			await vc.Start();
 		}
+	}
 
-		public static async Task StartAll()
+	public static void StopAll()
+	{
+		foreach (var vc in _volumeControllers)
 		{
-			foreach (var vc in _volumeControllers)
-			{
-				await vc.Start();
-			}
+			vc.Stop();
 		}
+	}
 
-		public static void StopAll()
-		{
-			foreach (var vc in _volumeControllers)
-			{
-				vc.Stop();
-			}
-		}
+	protected virtual async Task Start()
+	{
+		BaselineVolume = await GetBaselineVolume();
+		Running = true;
+		Console.WriteLine($"[{Name}] Started.");
+	}
 
-		protected virtual async Task Start()
-		{
-			BaselineVolume = await GetBaselineVolume();
-			Running = true;
-			Console.WriteLine($"[{Name}] Started.");
-		}
+	protected virtual void Stop()
+	{
+		Running = false;
+		Console.WriteLine($"[{Name}] Stopped.");
+	}
 
-		protected virtual void Stop()
-		{
-			Running = false;
-			Console.WriteLine($"[{Name}] Stopped.");
-		}
-
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
 	}
 }

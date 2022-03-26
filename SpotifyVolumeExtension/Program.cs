@@ -3,27 +3,26 @@ using System.Threading.Tasks;
 
 [assembly: SupportedOSPlatform("windows")]
 
-namespace SpotifyVolumeExtension
+namespace SpotifyVolumeExtension;
+
+public static class Program
 {
-	public static class Program
+	public static async Task Main()
 	{
-		public static async Task Main()
-		{
-			var messageLoopTask = Task.Factory.StartNew(ConsoleController.Start, TaskCreationOptions.LongRunning);
+		var messageLoopTask = Task.Factory.StartNew(ConsoleController.Start, TaskCreationOptions.LongRunning);
 
-			var sc = new SpotifyClient();
-			sc.Authenticate();
+		var sc = new SpotifyClient();
+		sc.Authenticate();
 
-			var sm = new SpotifyMonitor(sc);
+		var sm = new SpotifyMonitor(sc);
 
-			var svc = new SpotifyVolumeController(sc, sm.StatusController);
-			var vg = new WindowsVolumeGuard();
-			await sm.Start();
+		var svc = new SpotifyVolumeController(sc, sm.StatusController);
+		var vg = new WindowsVolumeGuard();
+		await sm.Start();
 
-			ConsoleController.Hide();
-			ConsoleController.RegisterDisposables(svc, vg, sc, sm);
+		ConsoleController.Hide();
+		ConsoleController.RegisterDisposables(svc, vg, sc, sm);
 
-			await messageLoopTask;
-		}
+		await messageLoopTask;
 	}
 }

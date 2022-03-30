@@ -68,7 +68,7 @@ public sealed class StatusController : IDisposable
 		if (_sm.SpotifyIsRunning())
 		{
 			var playbackContext = await _sm.GetPlaybackContext();
-			await OnStateChange(playbackContext.IsPlaying, playbackContext);
+			await OnStateChange(playbackContext?.IsPlaying ?? _lastState, playbackContext);
 		}
 		else
 		{

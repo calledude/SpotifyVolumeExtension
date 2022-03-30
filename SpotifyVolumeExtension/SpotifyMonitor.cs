@@ -107,7 +107,7 @@ public sealed class SpotifyMonitor : IDisposable
 	}
 
 	public async Task<PlaybackContext> GetPlaybackContext()
-		=> await _spotifyClient.Api.GetPlaybackAsync();
+		=> await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
 
 	public async Task<bool> GetPlayingStatus()
 		=> SpotifyIsRunning() && await IsPlayingMusic();
@@ -117,7 +117,7 @@ public sealed class SpotifyMonitor : IDisposable
 
 	private async Task<bool> IsPlayingMusic()
 	{
-		var pb = await Retry.Wrap(() => GetPlaybackContext());
+		var pb = await GetPlaybackContext();
 		return pb?.IsPlaying ?? false;
 	}
 

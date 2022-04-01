@@ -1,4 +1,6 @@
-﻿using System.Runtime.Versioning;
+﻿using SpotifyVolumeExtension.Monitoring;
+using SpotifyVolumeExtension.Volume;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 [assembly: SupportedOSPlatform("windows")]

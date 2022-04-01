@@ -1,10 +1,11 @@
 ﻿using Nito.AsyncEx;
 using SpotifyAPI.Web.Models;
+using SpotifyVolumeExtension.Utilities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Monitoring;
 
 public sealed class SpotifyMonitor : IDisposable
 {

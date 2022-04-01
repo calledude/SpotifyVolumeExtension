@@ -1,8 +1,11 @@
 ﻿using H.Hooks;
+using SpotifyVolumeExtension.Keyboard;
+using SpotifyVolumeExtension.Monitoring;
+using SpotifyVolumeExtension.Utilities;
 using System;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Volume;
 
 public sealed class SpotifyVolumeController : VolumeController
 {

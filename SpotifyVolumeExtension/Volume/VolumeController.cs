@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Volume;
 
 public abstract class VolumeController : IDisposable
 {

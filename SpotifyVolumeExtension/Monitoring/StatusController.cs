@@ -1,12 +1,14 @@
 ﻿using H.Hooks;
 using Nito.AsyncEx;
 using SpotifyAPI.Web.Models;
+using SpotifyVolumeExtension.Keyboard;
+using SpotifyVolumeExtension.Volume;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Timers;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Monitoring;
 
 public sealed class StatusController : IDisposable
 {

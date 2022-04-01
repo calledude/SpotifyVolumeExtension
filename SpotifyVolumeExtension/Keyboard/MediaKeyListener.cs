@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Keyboard;
 
 public sealed class MediaKeyListener : IDisposable
 {

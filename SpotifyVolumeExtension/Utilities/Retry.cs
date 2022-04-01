@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Utilities;
 
 public static class Retry
 {

@@ -1,7 +1,7 @@
 ﻿using H.Hooks;
 using System;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Keyboard;
 
 public sealed class MediaKeyEventArgs : EventArgs
 {

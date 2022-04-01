@@ -2,6 +2,7 @@
 using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
+using SpotifyVolumeExtension.Utilities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

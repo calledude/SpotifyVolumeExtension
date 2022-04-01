@@ -1,7 +1,7 @@
 ﻿using NAudio.CoreAudioApi;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Volume;
 
 public sealed class WindowsVolumeGuard : VolumeController
 {

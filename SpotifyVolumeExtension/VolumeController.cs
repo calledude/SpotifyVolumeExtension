@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension;
@@ -23,12 +24,7 @@ public abstract class VolumeController : IDisposable
 	}
 
 	public static async Task StartAll()
-	{
-		foreach (var vc in _volumeControllers)
-		{
-			await vc.Start();
-		}
-	}
+		=> await Task.WhenAll(_volumeControllers.Select(x => x.Start()));
 
 	public static void StopAll()
 	{

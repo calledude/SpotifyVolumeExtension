@@ -35,7 +35,7 @@ public class ProcessService
 
 	private async void ProcessExited(object sender, EventArgs e)
 	{
-		Console.WriteLine($"Process {_processName} has exited.");
+		Console.WriteLine($"Process '{_processName}' has exited.");
 
 		while (ProcessIsRunning())
 		{

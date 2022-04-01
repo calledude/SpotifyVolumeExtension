@@ -63,11 +63,7 @@ public static class ConsoleController
 	private static void ToggleVisibility(object sender, EventArgs e)
 	{
 		_visible = !_visible;
-		if (_visible)
-			_notifyIcon.ContextMenuStrip.Items[0].Text = "Hide";
-		else
-			_notifyIcon.ContextMenuStrip.Items[0].Text = "Show";
-
+		_notifyIcon.ContextMenuStrip.Items[0].Text = _visible ? "Hide" : "Show";
 		NativeMethods.SetConsoleWindowVisibility(_visible);
 	}
 

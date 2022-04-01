@@ -11,17 +11,17 @@ public static class Program
 	{
 		var messageLoopTask = Task.Factory.StartNew(ConsoleController.Start, TaskCreationOptions.LongRunning);
 
-		var sc = new SpotifyClient();
-		sc.Authenticate();
+		var spotifyClient = new SpotifyClient();
+		spotifyClient.Authenticate();
 
-		var sm = new SpotifyMonitor(sc);
+		var spotifyMonitor = new SpotifyMonitor(spotifyClient);
 
-		var svc = new SpotifyVolumeController(sc, sm.StatusController);
-		var vg = new WindowsVolumeGuard();
-		await sm.Start();
+		var spotifyVolumeController = new SpotifyVolumeController(spotifyClient, spotifyMonitor.StatusController);
+		var windowsVolumeGuard = new WindowsVolumeGuard();
+		await spotifyMonitor.Start();
 
 		ConsoleController.Hide();
-		ConsoleController.RegisterDisposables(svc, vg, sc, sm);
+		ConsoleController.RegisterDisposables(spotifyVolumeController, windowsVolumeGuard, spotifyClient, spotifyMonitor);
 
 		await messageLoopTask;
 	}

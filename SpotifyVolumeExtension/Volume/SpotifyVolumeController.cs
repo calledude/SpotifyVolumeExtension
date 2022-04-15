@@ -1,44 +1,51 @@
 ﻿using H.Hooks;
+using Microsoft.Extensions.Logging;
 using SpotifyVolumeExtension.Keyboard;
 using SpotifyVolumeExtension.Monitoring;
-using SpotifyVolumeExtension.Utilities;
+using SpotifyVolumeExtension.Spotify;
 using System;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension.Volume;
 
-public sealed class SpotifyVolumeController : VolumeController
+public sealed class SpotifyVolumeController : VolumeControllerBase
 {
-	private readonly MediaKeyListener _mkl;
+	private readonly MediaKeyListener _mediaKeyListener;
+	private readonly ILogger<SpotifyVolumeController> _logger;
 	private readonly StatusController _statusController;
 	private readonly SpotifyClient _spotifyClient;
 	private int _lastVolume;
 
-	public SpotifyVolumeController(SpotifyClient sc, StatusController statusController)
+	public SpotifyVolumeController(
+		SpotifyClient spotifyClient,
+		StatusController statusController,
+		MediaKeyListener mediaKeyListener,
+		ILogger<SpotifyVolumeController> logger) : base(logger)
 	{
 		_statusController = statusController;
-		_spotifyClient = sc;
-		_mkl = new MediaKeyListener();
+		_spotifyClient = spotifyClient;
+		_mediaKeyListener = mediaKeyListener;
+		_logger = logger;
 
 		var debounceConfig = (TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(250));
-		_mkl.SubscribeTo(Key.VolumeUp, debounceConfig);
-		_mkl.SubscribeTo(Key.VolumeDown, debounceConfig);
+		_mediaKeyListener.SubscribeTo(Key.VolumeUp, debounceConfig);
+		_mediaKeyListener.SubscribeTo(Key.VolumeDown, debounceConfig);
 	}
 
-	protected override async Task Start()
+	public override async Task Start()
 	{
 		await base.Start();
 
-		_mkl.Run();
+		_mediaKeyListener.Run();
 
 		_lastVolume = BaselineVolume;
-		_mkl.SubscribedKeyPressed += VolumeKeyPressed;
+		_mediaKeyListener.SubscribedKeyPressed += VolumeKeyPressed;
 		_statusController.VolumeReport += OnVolumeReport;
 	}
 
-	protected override void Stop()
+	public override void Stop()
 	{
-		_mkl.SubscribedKeyPressed -= VolumeKeyPressed;
+		_mediaKeyListener.SubscribedKeyPressed -= VolumeKeyPressed;
 		_statusController.VolumeReport -= OnVolumeReport;
 		base.Stop();
 	}
@@ -47,11 +54,11 @@ public sealed class SpotifyVolumeController : VolumeController
 	//therefore we wait for it to catch up. This happens when we press the play-key just as spotify is starting.
 	protected override async Task<int> GetBaselineVolume()
 	{
-		var playbackContext = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
+		var playbackContext = await _spotifyClient.GetPlaybackContext();
 		while (playbackContext?.Device == null)
 		{
 			await Task.Delay(500);
-			playbackContext = await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
+			playbackContext = await _spotifyClient.GetPlaybackContext();
 		}
 		return playbackContext.Device.VolumePercent;
 	}
@@ -75,7 +82,7 @@ public sealed class SpotifyVolumeController : VolumeController
 		if (Math.Abs(volume - BaselineVolume) <= 1)
 			return;
 
-		Console.WriteLine($"[{Name}] Manual volume change detected. {BaselineVolume}% -> {volume}%");
+		_logger.LogInformation("Manual volume change detected. {currentKnownVolume}% -> {newVolume}%", BaselineVolume, volume);
 		BaselineVolume = _lastVolume = volume;
 	}
 
@@ -84,20 +91,20 @@ public sealed class SpotifyVolumeController : VolumeController
 		if (_lastVolume == BaselineVolume)
 			return;
 
-		var err = await Retry.Wrap(() => _spotifyClient.Api.SetVolumeAsync(BaselineVolume));
+		var err = await _spotifyClient.SetVolume(BaselineVolume);
 
 		if (err != null && err.Error == null)
 		{
-			Console.WriteLine($"[{Name}] Changed volume to {BaselineVolume}%");
+			_logger.LogInformation("Changed volume to {volume}%", BaselineVolume);
 			_lastVolume = BaselineVolume;
 		}
 		else
 		{
-			Console.WriteLine($"[{Name}] Failed to change volume.");
+			_logger.LogWarning("Failed to change volume.");
 			BaselineVolume = _lastVolume;
 		}
 	}
 
 	protected override void Dispose(bool disposing)
-		=> _mkl.Dispose();
+		=> _mediaKeyListener.Dispose();
 }

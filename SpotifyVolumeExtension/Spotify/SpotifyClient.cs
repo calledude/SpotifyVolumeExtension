@@ -1,4 +1,5 @@
-﻿using SpotifyAPI.Web;
+﻿using Microsoft.Extensions.Logging;
+using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
@@ -7,18 +8,21 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SpotifyVolumeExtension;
+namespace SpotifyVolumeExtension.Spotify;
 
 public sealed class SpotifyClient : IDisposable
 {
+	private readonly ILogger<SpotifyClient> _logger;
 	private readonly TokenSwapWebAPIFactory _authFactory;
 	private readonly AutoResetEvent _authWait;
 
-	public SpotifyWebAPI Api { get; private set; }
+	private SpotifyWebAPI Api { get; set; }
 	public event Action NoActivePlayer;
 
-	public SpotifyClient()
+	public SpotifyClient(ILogger<SpotifyClient> logger)
 	{
+		_logger = logger;
+
 		_authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
 		{
 			Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
@@ -34,21 +38,30 @@ public sealed class SpotifyClient : IDisposable
 		_authWait = new AutoResetEvent(false);
 	}
 
+	public async Task<PlaybackContext> GetPlaybackContext()
+		=> await Retry.Wrap(() => Api.GetPlaybackAsync());
+
+	public async Task<ErrorResponse> SetVolume(int volumePercent)
+		=> await Retry.Wrap(() => Api.SetVolumeAsync(volumePercent));
+
 	private void OnError(Error error)
 	{
-		if (error.Status == 404) // No active player
+		if (error.Status == ErrorCode.TokenExpired)
+			return;
+
+		if (error.Status == ErrorCode.NoActivePlayer)
 		{
 			NoActivePlayer?.Invoke();
 		}
 		else
 		{
-			Log($"{error.Status} {error.Message}");
+			_logger.LogError("{StatusCode} {Message}", error.Status, error.Message);
 		}
 	}
 
 	public void Authenticate()
 	{
-		Log($"Trying to authenticate with Spotify. This might take up to {_authFactory.Timeout} seconds");
+		_logger.LogInformation("Trying to authenticate with Spotify. This might take up to {timeout} seconds", _authFactory.Timeout);
 
 		Api = _authFactory.GetWebApi();
 
@@ -63,7 +76,7 @@ public sealed class SpotifyClient : IDisposable
 		if (autoRefresh == _authFactory.AutoRefresh)
 			return;
 
-		Log($"Setting 'AutoRefresh' to: {autoRefresh}");
+		_logger.LogInformation("Setting 'AutoRefresh' to: {autoRefresh}", autoRefresh);
 		_authFactory.AutoRefresh = autoRefresh;
 
 		if (autoRefresh && Api.Token.IsExpired())
@@ -73,22 +86,22 @@ public sealed class SpotifyClient : IDisposable
 	}
 
 	private void OnTokenExpired(object sender, AccessTokenExpiredEventArgs e)
-		=> Log("Token expired.");
+		=> _logger.LogInformation("Token expired.");
 
 	private void OnTokenRefresh(object sender, AuthSuccessEventArgs e)
-		=> Log("Refreshed token.");
+		=> _logger.LogInformation("Refreshed token.");
 
 	private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
 	{
 		_authWait.Set();
-		Log("Successfully authenticated.");
+		_logger.LogInformation("Successfully authenticated.");
 	}
 
 	private async void OnAuthFailure(object sender, AuthFailureEventArgs e)
 	{
 		if (Api == default)
 		{
-			Log($"Authentication failed: {e.Error} - Retrying.");
+			_logger.LogWarning("Authentication failed: {error} - Retrying.", e.Error);
 
 			Api = _authFactory.GetWebApi();
 			return;
@@ -96,13 +109,10 @@ public sealed class SpotifyClient : IDisposable
 
 		if (Api.Token == default || Api.Token.IsExpired())
 		{
-			Log($"Refreshing token failed: {e.Error} - Retrying.");
+			_logger.LogWarning("Refreshing token failed: {error} - Retrying.", e.Error);
 			await Retry.Wrap(() => _authFactory.RefreshAuthAsync());
 		}
 	}
-
-	private static void Log(string message)
-		=> Console.WriteLine($"[{nameof(SpotifyClient)}] {message}");
 
 	public void Dispose()
 	{

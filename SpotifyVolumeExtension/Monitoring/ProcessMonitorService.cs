@@ -1,21 +1,23 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension.Monitoring;
 
-public class ProcessService
+public sealed class ProcessMonitorService
 {
-	private readonly string _processName;
+	private const string _processName = "Spotify";
+	private readonly ILogger<ProcessMonitorService> _logger;
 	private Process[] _processes;
 
 	public event EventHandler Exited;
 
-	public ProcessService(string processName)
+	public ProcessMonitorService(ILogger<ProcessMonitorService> logger)
 	{
-		_processName = processName;
 		_processes = Process.GetProcessesByName(_processName);
+		_logger = logger;
 	}
 
 	public async Task WaitForProcessToStart()
@@ -35,7 +37,7 @@ public class ProcessService
 
 	private async void ProcessExited(object sender, EventArgs e)
 	{
-		Console.WriteLine($"Process '{_processName}' has exited.");
+		_logger.LogInformation("Process '{processName}' has exited.", _processName);
 
 		while (ProcessIsRunning())
 		{

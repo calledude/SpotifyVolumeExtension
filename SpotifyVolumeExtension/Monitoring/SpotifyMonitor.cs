@@ -1,6 +1,6 @@
-﻿using Nito.AsyncEx;
-using SpotifyAPI.Web.Models;
-using SpotifyVolumeExtension.Utilities;
+﻿using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
+using SpotifyVolumeExtension.Spotify;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,40 +9,48 @@ namespace SpotifyVolumeExtension.Monitoring;
 
 public sealed class SpotifyMonitor : IDisposable
 {
-	public StatusController StatusController { get; }
-
+	private readonly StatusController _statusController;
 	private readonly SpotifyClient _spotifyClient;
-	private readonly ProcessService _processService;
+	private readonly ILogger<SpotifyMonitor> _logger;
+	private readonly ProcessMonitorService _processMonitorService;
 	private readonly AsyncMonitor _start;
 	private CancellationTokenSource _cts;
 	private readonly AsyncManualResetEvent _failure;
 	private Task _pollTask;
 
-	public SpotifyMonitor(SpotifyClient sc)
+	public SpotifyMonitor(
+		SpotifyClient spotifyClient,
+		ProcessMonitorService processMonitorService,
+		AsyncMonitor asyncMonitor,
+		StatusController statusController,
+		ILogger<SpotifyMonitor> logger)
 	{
-		_processService = new ProcessService("Spotify");
-		_processService.Exited += SpotifyExited;
-		_start = new AsyncMonitor();
-		_failure = new AsyncManualResetEvent(false);
-		StatusController = new StatusController(this);
+		_logger = logger;
 
-		_spotifyClient = sc ?? throw new ArgumentNullException(nameof(sc));
-		sc.NoActivePlayer += CheckState;
+		_processMonitorService = processMonitorService;
+		_processMonitorService.Exited += SpotifyExited;
+		_start = asyncMonitor;
+		_statusController = statusController;
+
+		_spotifyClient = spotifyClient;
+		_spotifyClient.NoActivePlayer += CheckState;
+
+		_failure = new AsyncManualResetEvent(false);
 	}
 
 	public async Task Start()
 	{
-		Log("Waiting for Spotify to start...");
-		await _processService.WaitForProcessToStart();
-		Log("Spotify process detected.");
+		_logger.LogInformation("Waiting for Spotify to start...");
+		await _processMonitorService.WaitForProcessToStart();
+		_logger.LogInformation("Spotify process detected.");
 
 		await _spotifyClient.SetAutoRefresh(true);
 
-		Log("Waiting for music to start playing.");
+		_logger.LogInformation("Waiting for music to start playing.");
 		if (!await TryWaitForPlaybackActivation())
 			return;
 
-		Log("Started. Now monitoring activity.");
+		_logger.LogInformation("Started. Now monitoring activity.");
 
 		_cts = new CancellationTokenSource();
 		_pollTask = Task.WhenAny(PollSpotifyStatus(), Task.Delay(Timeout.Infinite, _cts.Token));
@@ -52,7 +60,7 @@ public sealed class SpotifyMonitor : IDisposable
 	{
 		double sleep = 1;
 
-		while (!await StatusController.CheckStateImmediate())
+		while (!await _statusController.CheckStateImmediate())
 		{
 			var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
 			var failureWaitTask = _failure.WaitAsync();
@@ -78,11 +86,8 @@ public sealed class SpotifyMonitor : IDisposable
 		} while (!_cts.IsCancellationRequested);
 	}
 
-	private static void Log(string message)
-		=> Console.WriteLine($"[{nameof(SpotifyMonitor)}] {message}");
-
 	private void CheckState()
-		=> StatusController.CheckState();
+		=> _statusController.CheckState();
 
 	private async void SpotifyExited(object sender, EventArgs e)
 	{
@@ -107,18 +112,15 @@ public sealed class SpotifyMonitor : IDisposable
 		}
 	}
 
-	public async Task<PlaybackContext> GetPlaybackContext()
-		=> await Retry.Wrap(() => _spotifyClient.Api.GetPlaybackAsync());
-
 	public async Task<bool> GetPlayingStatus()
 		=> SpotifyIsRunning() && await IsPlayingMusic();
 
 	public bool SpotifyIsRunning()
-		=> _processService.ProcessIsRunning();
+		=> _processMonitorService.ProcessIsRunning();
 
 	private async Task<bool> IsPlayingMusic()
 	{
-		var pb = await GetPlaybackContext();
+		var pb = await _spotifyClient.GetPlaybackContext();
 		return pb?.IsPlaying ?? false;
 	}
 
@@ -126,6 +128,6 @@ public sealed class SpotifyMonitor : IDisposable
 	{
 		_spotifyClient.Dispose();
 		_cts?.Dispose();
-		StatusController.Dispose();
+		_statusController.Dispose();
 	}
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension.Utilities;
@@ -29,13 +30,14 @@ public static class Retry
 			}
 			catch (Exception ex)
 			{
+				var logger = Log.Logger.ForContext(typeof(Retry));
 				if (retries >= MAXRETRIES)
 				{
-					Console.WriteLine("Max retries exceeded. Bailing.");
+					logger.Warning("Max retries exceeded. Bailing.");
 					return default;
 				}
 
-				Console.WriteLine($"Retrying - {ex.GetType().Name} thrown.");
+				logger.Warning($"Retrying - {ex.GetType().Name} thrown.");
 				await Task.Delay(TimeSpan.FromMilliseconds(500));
 			}
 		}

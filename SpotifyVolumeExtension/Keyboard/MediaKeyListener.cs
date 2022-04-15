@@ -15,12 +15,13 @@ public sealed class MediaKeyListener : IDisposable
 	private DateTime _lastEvent;
 	private readonly LowLevelKeyboardHook _keyboardHook;
 
-	private readonly AsyncMonitor _lock = new();
+	private readonly AsyncMonitor _lock;
 
-	public MediaKeyListener()
+	public MediaKeyListener(AsyncMonitor asyncMonitor, LowLevelKeyboardHook keyboardHook)
 	{
+		_lock = asyncMonitor;
 		_debounceConfig = new Dictionary<Key, (TimeSpan, TimeSpan)>();
-		_keyboardHook = new();
+		_keyboardHook = keyboardHook;
 		_keyboardHook.OneUpEvent = false;
 		_keyboardHook.Down += OnKeyDown;
 		_keyboardHook.Up += OnKeyUp;

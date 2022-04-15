@@ -1,10 +1,13 @@
 ﻿using H.Hooks;
+using Microsoft.Extensions.DependencyInjection;
 using Nito.AsyncEx;
 using SpotifyAPI.Web.Models;
 using SpotifyVolumeExtension.Keyboard;
+using SpotifyVolumeExtension.Spotify;
 using SpotifyVolumeExtension.Volume;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -13,38 +16,47 @@ namespace SpotifyVolumeExtension.Monitoring;
 public sealed class StatusController : IDisposable
 {
 	private bool _lastState;
-	private readonly SpotifyMonitor _sm;
-	private readonly MediaKeyListener _mkl;
+	private readonly ProcessMonitorService _processMonitorService;
+	private readonly SpotifyClient _spotifyClient;
+	private readonly IServiceProvider _serviceProvider;
+	private readonly MediaKeyListener _mediaKeyListener;
 	private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
 	private readonly Timer _queueTimer;
 	private readonly AsyncMonitor _startLock;
 
 	public event Action<int> VolumeReport;
 
-	public StatusController(SpotifyMonitor sm)
+	public StatusController(
+		ProcessMonitorService processMonitorService,
+		SpotifyClient spotifyClient,
+		AsyncMonitor asyncMonitor,
+		MediaKeyListener mediaKeyListener,
+		IServiceProvider serviceProvider)
 	{
-		_startLock = new AsyncMonitor();
+		_startLock = asyncMonitor;
 		_apiCallQueue = new ConcurrentQueue<Func<Task>>();
 		_queueTimer = new Timer(500);
 		_queueTimer.Elapsed += RunQueuedApiCalls;
 		_queueTimer.Enabled = true;
 
-		_mkl = new MediaKeyListener();
-		_mkl.Run();
+		_mediaKeyListener = mediaKeyListener;
+		_mediaKeyListener.Run();
 
-		_mkl.SubscribeTo(Key.MediaPlayPause);
-		_mkl.SubscribeTo(Key.MediaStop);
-		_mkl.SubscribedKeyPressed += CheckStateInternal;
+		_mediaKeyListener.SubscribeTo(Key.MediaPlayPause);
+		_mediaKeyListener.SubscribeTo(Key.MediaStop);
+		_mediaKeyListener.SubscribedKeyPressed += CheckStateInternal;
 
-		_sm = sm ?? throw new ArgumentNullException(nameof(sm));
+		_processMonitorService = processMonitorService;
+		_spotifyClient = spotifyClient;
+		_serviceProvider = serviceProvider;
 	}
 
 	private async void RunQueuedApiCalls(object sender, ElapsedEventArgs e)
 	{
-		if (_apiCallQueue.TryDequeue(out var task))
-		{
-			await task.Invoke();
-		}
+		if (!_apiCallQueue.TryDequeue(out var task))
+			return;
+
+		await task.Invoke();
 	}
 
 	private async Task CheckStateInternal(MediaKeyEventArgs m)
@@ -67,9 +79,9 @@ public sealed class StatusController : IDisposable
 
 	public async Task<bool> CheckStateImmediate()
 	{
-		if (_sm.SpotifyIsRunning())
+		if (_processMonitorService.ProcessIsRunning())
 		{
-			var playbackContext = await _sm.GetPlaybackContext();
+			var playbackContext = await _spotifyClient.GetPlaybackContext();
 			await OnStateChange(playbackContext?.IsPlaying ?? _lastState, playbackContext);
 		}
 		else
@@ -99,20 +111,24 @@ public sealed class StatusController : IDisposable
 				return;
 
 			_lastState = newState;
+			var volumeControllers = _serviceProvider.GetServices<VolumeControllerBase>();
 			if (newState)
 			{
-				await VolumeController.StartAll();
+				await Task.WhenAll(volumeControllers.Select(x => x.Start()));
 			}
 			else
 			{
-				VolumeController.StopAll();
+				foreach (var vc in volumeControllers)
+				{
+					vc.Stop();
+				}
 			}
 		}
 	}
 
 	public void Dispose()
 	{
-		_mkl.Dispose();
+		_mediaKeyListener.Dispose();
 		_queueTimer.Dispose();
 	}
 }

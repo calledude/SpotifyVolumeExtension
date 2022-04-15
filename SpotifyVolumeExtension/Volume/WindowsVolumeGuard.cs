@@ -1,9 +1,10 @@
-﻿using NAudio.CoreAudioApi;
+﻿using Microsoft.Extensions.Logging;
+using NAudio.CoreAudioApi;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension.Volume;
 
-public sealed class WindowsVolumeGuard : VolumeController
+public sealed class WindowsVolumeGuard : VolumeControllerBase
 {
 	private readonly MMDevice _audioDeviceNaudio;
 
@@ -13,7 +14,7 @@ public sealed class WindowsVolumeGuard : VolumeController
 		set => _audioDeviceNaudio.AudioEndpointVolume.MasterVolumeLevelScalar = value / 100.0f;
 	}
 
-	public WindowsVolumeGuard()
+	public WindowsVolumeGuard(ILogger<WindowsVolumeGuard> logger) : base(logger)
 	{
 		_audioDeviceNaudio = new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 		_audioDeviceNaudio.AudioEndpointVolume.OnVolumeNotification += OnVolumeChange;

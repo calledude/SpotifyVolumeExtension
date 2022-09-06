@@ -25,13 +25,13 @@ public sealed class WindowsVolumeGuard : VolumeControllerBase
 
 	protected override Task SetNewVolume()
 	{
-		SystemVolume = BaselineVolume;
+		SystemVolume = Volume;
 		return Task.CompletedTask;
 	}
 
 	private async void OnVolumeChange(AudioVolumeNotificationData data)
 	{
-		if (!Running || (int)data.MasterVolume == BaselineVolume)
+		if (!Running || (int)data.MasterVolume == Volume)
 			return;
 
 		await SetNewVolume();

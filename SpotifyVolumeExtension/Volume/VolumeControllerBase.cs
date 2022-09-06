@@ -9,7 +9,7 @@ public abstract class VolumeControllerBase : IDisposable
 	private readonly ILogger _logger;
 
 	protected bool Running { get; private set; }
-	protected int BaselineVolume { get; set; }
+	protected int Volume { get; set; }
 
 	protected abstract Task<int> GetBaselineVolume();
 	protected abstract Task SetNewVolume();
@@ -22,7 +22,7 @@ public abstract class VolumeControllerBase : IDisposable
 
 	public virtual async Task Start()
 	{
-		BaselineVolume = await GetBaselineVolume();
+		Volume = await GetBaselineVolume();
 		Running = true;
 		_logger.LogInformation("Started.");
 	}

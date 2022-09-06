@@ -23,7 +23,7 @@ public sealed class SpotifyClient : IDisposable
 	{
 		_logger = logger;
 
-		_authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.herokuapp.com")
+		_authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.azurewebsites.net")
 		{
 			Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
 			AutoRefresh = true,

@@ -40,6 +40,10 @@ public sealed class SpotifyMonitor : IDisposable
 
 	public async Task Start()
 	{
+		using var _ = await _start.EnterAsync();
+		_logger.LogTrace("Lock acquired");
+		_failure.Reset();
+
 		_logger.LogInformation("Waiting for Spotify to start...");
 		await _processMonitorService.WaitForProcessToStart();
 		_logger.LogInformation("Spotify process detected.");
@@ -62,14 +66,20 @@ public sealed class SpotifyMonitor : IDisposable
 
 		while (!await _statusController.CheckStateImmediate())
 		{
-			var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
 			var failureWaitTask = _failure.WaitAsync();
-			var completedTask = await Task.WhenAny(timeoutTask, failureWaitTask);
+			var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(500 * sleep));
+			var completedTask = await Task.WhenAny(failureWaitTask, timeoutTask);
 
 			if (completedTask == failureWaitTask)
+			{
+				_logger.LogTrace("Failure signal received.");
 				return false;
+			}
+
 			if (sleep < 20)
+			{
 				sleep *= 1.35;
+			}
 		}
 
 		return true;
@@ -79,11 +89,15 @@ public sealed class SpotifyMonitor : IDisposable
 	//if the status changes, subscribers (Volume controllers) to the event are alerted.
 	private async Task PollSpotifyStatus()
 	{
+		_logger.LogTrace("Starting poll task");
+
 		do
 		{
 			CheckState();
 			await Task.Delay(15000);
 		} while (!_cts.IsCancellationRequested);
+
+		_logger.LogTrace("Poll task finished");
 	}
 
 	private void CheckState()
@@ -97,6 +111,7 @@ public sealed class SpotifyMonitor : IDisposable
 
 		if (_pollTask != null)
 		{
+			_logger.LogTrace("Waiting for poll task to exit");
 			await _pollTask;
 			_pollTask.Dispose();
 		}
@@ -104,12 +119,7 @@ public sealed class SpotifyMonitor : IDisposable
 		_failure.Set();
 
 		await _spotifyClient.SetAutoRefresh(false);
-
-		using (_ = await _start.EnterAsync())
-		{
-			_failure.Reset();
-			await Start();
-		}
+		await Start();
 	}
 
 	public async Task<bool> GetPlayingStatus()

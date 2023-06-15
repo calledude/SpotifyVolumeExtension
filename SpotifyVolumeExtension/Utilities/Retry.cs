@@ -1,45 +1,46 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
 using System;
 using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension.Utilities;
 
-public static class Retry
+public class Retry
 {
-	private const int MAXRETRIES = 5;
+	private const int _maxRetries = 5;
+	private readonly ILogger<Retry> _logger;
+	private readonly AsyncRetryPolicy _retryPolicy;
 
-	public static async Task<T> Wrap<T>(Func<Task<T>> wrapSubject)
-		=> await WrapInternal(wrapSubject);
-
-	public static async Task Wrap(Func<Task> wrapSubject)
-		=> await WrapInternal(async () =>
-		{
-			await wrapSubject();
-			return 1;
-		});
-
-	private static async Task<T> WrapInternal<T>(Func<Task<T>> wrapSubject)
+	public Retry(ILogger<Retry> logger)
 	{
-		var retries = 0;
-		while (true)
-		{
-			try
-			{
-				retries++;
-				return await wrapSubject();
-			}
-			catch (Exception ex)
-			{
-				var logger = Log.Logger.ForContext(typeof(Retry));
-				if (retries >= MAXRETRIES)
-				{
-					logger.Warning("Max retries exceeded. Bailing.");
-					return default;
-				}
+		_logger = logger;
 
-				logger.Warning($"Retrying - {ex.GetType().Name} thrown.");
-				await Task.Delay(TimeSpan.FromMilliseconds(500));
-			}
-		}
+		_retryPolicy = Policy.Handle<Exception>()
+			.WaitAndRetryAsync(
+				_maxRetries,
+				(retry) => retry * TimeSpan.FromMilliseconds(500),
+				(ex, _) => _logger.LogWarning("Retrying - {exceptionType} thrown.", ex.GetType().Name));
+	}
+
+	public async Task<T> Wrap<T>(Func<Task<T>> retrySubject)
+	{
+		var result = await _retryPolicy.ExecuteAndCaptureAsync(retrySubject);
+		HandleOutcome(result.Outcome);
+		return result.Result;
+	}
+
+	public async Task Wrap(Func<Task> retrySubject)
+	{
+		var result = await _retryPolicy.ExecuteAndCaptureAsync(retrySubject);
+		HandleOutcome(result.Outcome);
+	}
+
+	private void HandleOutcome(OutcomeType outcomeType)
+	{
+		if (outcomeType != OutcomeType.Failure)
+			return;
+
+		_logger.LogWarning("Max retries exceeded. Bailing.");
 	}
 }

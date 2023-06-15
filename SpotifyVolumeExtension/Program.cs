@@ -7,11 +7,12 @@ using Serilog.Events;
 using SpotifyVolumeExtension.Keyboard;
 using SpotifyVolumeExtension.Monitoring;
 using SpotifyVolumeExtension.Spotify;
+using SpotifyVolumeExtension.Utilities;
 using SpotifyVolumeExtension.Volume;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
-[assembly: SupportedOSPlatform("windows")]
+[assembly: SupportedOSPlatform("windows5.1.2600")]
 
 namespace SpotifyVolumeExtension;
 
@@ -26,6 +27,7 @@ public static class Program
 			.AddSingleton<SpotifyMonitor>()
 			.AddSingleton<StatusController>()
 			.AddSingleton<ProcessMonitorService>()
+			.AddSingleton<Retry>()
 			.AddSingleton<VolumeControllerBase, SpotifyVolumeController>()
 			.AddSingleton<VolumeControllerBase, WindowsVolumeGuard>()
 			.AddTransient<AsyncMonitor>()

@@ -13,16 +13,17 @@ namespace SpotifyVolumeExtension.Spotify;
 public sealed class SpotifyClient : IDisposable
 {
 	private readonly ILogger<SpotifyClient> _logger;
+	private readonly Retry _retrier;
 	private readonly TokenSwapWebAPIFactory _authFactory;
 	private readonly AutoResetEvent _authWait;
 
 	private SpotifyWebAPI Api { get; set; }
 	public event Action NoActivePlayer;
 
-	public SpotifyClient(ILogger<SpotifyClient> logger)
+	public SpotifyClient(ILogger<SpotifyClient> logger, Retry retrier)
 	{
 		_logger = logger;
-
+		_retrier = retrier;
 		_authFactory = new TokenSwapWebAPIFactory("https://spotifyvolumeextension.azurewebsites.net")
 		{
 			Scope = Scope.UserModifyPlaybackState | Scope.UserReadPlaybackState,
@@ -39,10 +40,10 @@ public sealed class SpotifyClient : IDisposable
 	}
 
 	public async Task<PlaybackContext> GetPlaybackContext()
-		=> await Retry.Wrap(() => Api.GetPlaybackAsync());
+		=> await _retrier.Wrap(() => Api.GetPlaybackAsync());
 
 	public async Task<ErrorResponse> SetVolume(int volumePercent)
-		=> await Retry.Wrap(() => Api.SetVolumeAsync(volumePercent));
+		=> await _retrier.Wrap(() => Api.SetVolumeAsync(volumePercent));
 
 	private void OnError(Error error)
 	{
@@ -81,7 +82,7 @@ public sealed class SpotifyClient : IDisposable
 
 		if (autoRefresh && Api.Token.IsExpired())
 		{
-			await Retry.Wrap(() => _authFactory.RefreshAuthAsync());
+			await _retrier.Wrap(() => _authFactory.RefreshAuthAsync());
 		}
 	}
 
@@ -110,7 +111,7 @@ public sealed class SpotifyClient : IDisposable
 		if (Api.Token == default || Api.Token.IsExpired())
 		{
 			_logger.LogWarning("Refreshing token failed: {error} - Retrying.", e.Error);
-			await Retry.Wrap(() => _authFactory.RefreshAuthAsync());
+			await _retrier.Wrap(() => _authFactory.RefreshAuthAsync());
 		}
 	}
 

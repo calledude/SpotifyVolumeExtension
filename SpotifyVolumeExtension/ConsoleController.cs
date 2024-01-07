@@ -8,7 +8,7 @@ namespace SpotifyVolumeExtension;
 
 public static partial class ConsoleController
 {
-	private static readonly List<IDisposable> _disposables = new();
+	private static readonly List<IDisposable> _disposables = [];
 
 	private static readonly NotifyIcon _notifyIcon = new()
 	{

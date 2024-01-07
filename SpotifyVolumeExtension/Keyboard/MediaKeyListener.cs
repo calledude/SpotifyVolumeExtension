@@ -20,7 +20,7 @@ public sealed class MediaKeyListener : IDisposable
 	public MediaKeyListener(AsyncMonitor asyncMonitor, LowLevelKeyboardHook keyboardHook)
 	{
 		_lock = asyncMonitor;
-		_debounceConfig = new Dictionary<Key, (TimeSpan, TimeSpan)>();
+		_debounceConfig = [];
 		_keyboardHook = keyboardHook;
 		_keyboardHook.OneUpEvent = false;
 		_keyboardHook.Down += OnKeyDown;

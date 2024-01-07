@@ -23,7 +23,7 @@ public class Retry
 				(ex, _) => _logger.LogWarning("Retrying - {exceptionType} thrown.", ex.GetType().Name));
 	}
 
-	public async Task<T> Wrap<T>(Func<Task<T>> retrySubject)
+	public async Task<T?> Wrap<T>(Func<Task<T>> retrySubject)
 	{
 		var result = await _retryPolicy.ExecuteAndCaptureAsync(retrySubject);
 		HandleOutcome(result.Outcome);

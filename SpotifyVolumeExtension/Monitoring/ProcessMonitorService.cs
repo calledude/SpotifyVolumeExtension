@@ -12,7 +12,7 @@ public sealed class ProcessMonitorService
 	private readonly ILogger<ProcessMonitorService> _logger;
 	private Process[] _processes;
 
-	public event EventHandler Exited;
+	public event EventHandler? Exited;
 
 	public ProcessMonitorService(ILogger<ProcessMonitorService> logger)
 	{
@@ -35,7 +35,7 @@ public sealed class ProcessMonitorService
 	public bool ProcessIsRunning()
 		=> _processes.Any(x => !x.HasExited);
 
-	private async void ProcessExited(object sender, EventArgs e)
+	private async void ProcessExited(object? sender, EventArgs e)
 	{
 		_logger.LogInformation("Process '{processName}' has exited.", _processName);
 

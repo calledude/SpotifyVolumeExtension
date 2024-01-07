@@ -8,7 +8,7 @@ namespace SpotifyVolumeExtension.Keyboard;
 
 public sealed class MediaKeyListener : IDisposable
 {
-	public event Func<MediaKeyEventArgs, Task> SubscribedKeyPressed;
+	public event Func<MediaKeyEventArgs, Task>? SubscribedKeyPressed;
 
 	private int _presses;
 	private readonly Dictionary<Key, (TimeSpan, TimeSpan)> _debounceConfig;
@@ -29,7 +29,7 @@ public sealed class MediaKeyListener : IDisposable
 
 	public void Run() => _keyboardHook.Start();
 
-	private void OnKeyDown(object sender, KeyboardEventArgs e)
+	private void OnKeyDown(object? sender, KeyboardEventArgs e)
 	{
 		if (!_debounceConfig.ContainsKey(e.CurrentKey))
 			return;
@@ -39,7 +39,7 @@ public sealed class MediaKeyListener : IDisposable
 		++_presses;
 	}
 
-	private async void OnKeyUp(object sender, KeyboardEventArgs e)
+	private async void OnKeyUp(object? sender, KeyboardEventArgs e)
 	{
 		if (!_debounceConfig.ContainsKey(e.CurrentKey))
 			return;

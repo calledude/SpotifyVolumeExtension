@@ -14,9 +14,9 @@ public sealed class SpotifyMonitor : IDisposable
 	private readonly ILogger<SpotifyMonitor> _logger;
 	private readonly ProcessMonitorService _processMonitorService;
 	private readonly AsyncMonitor _start;
-	private CancellationTokenSource _cts;
+	private CancellationTokenSource? _cts;
 	private readonly AsyncManualResetEvent _failure;
-	private Task _pollTask;
+	private Task? _pollTask;
 
 	public SpotifyMonitor(
 		SpotifyClient spotifyClient,
@@ -95,7 +95,7 @@ public sealed class SpotifyMonitor : IDisposable
 		{
 			CheckState();
 			await Task.Delay(15000);
-		} while (!_cts.IsCancellationRequested);
+		} while (!_cts?.IsCancellationRequested ?? true);
 
 		_logger.LogTrace("Poll task finished");
 	}
@@ -103,7 +103,7 @@ public sealed class SpotifyMonitor : IDisposable
 	private void CheckState()
 		=> _statusController.CheckState();
 
-	private async void SpotifyExited(object sender, EventArgs e)
+	private async void SpotifyExited(object? sender, EventArgs e)
 	{
 		CheckState();
 

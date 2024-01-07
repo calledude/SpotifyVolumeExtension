@@ -24,7 +24,7 @@ public sealed class StatusController : IDisposable
 	private readonly Timer _queueTimer;
 	private readonly AsyncMonitor _startLock;
 
-	public event Action<int> VolumeReport;
+	public event Action<int>? VolumeReport;
 
 	public StatusController(
 		ProcessMonitorService processMonitorService,
@@ -51,7 +51,7 @@ public sealed class StatusController : IDisposable
 		_serviceProvider = serviceProvider;
 	}
 
-	private async void RunQueuedApiCalls(object sender, ElapsedEventArgs e)
+	private async void RunQueuedApiCalls(object? sender, ElapsedEventArgs e)
 	{
 		if (!_apiCallQueue.TryDequeue(out var task))
 			return;
@@ -100,7 +100,7 @@ public sealed class StatusController : IDisposable
 		_apiCallQueue.Enqueue(CheckStateImmediate);
 	}
 
-	private async Task OnStateChange(bool newState, PlaybackContext context)
+	private async Task OnStateChange(bool newState, PlaybackContext? context)
 	{
 		using (_ = await _startLock.EnterAsync())
 		{

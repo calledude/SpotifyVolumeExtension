@@ -46,7 +46,7 @@ public static class ConsoleController
 	public static void RegisterDisposables(params IDisposable[] disposables)
 		=> _disposables.AddRange(disposables);
 
-	private static void CleanExit(object sender, EventArgs e)
+	private static void CleanExit(object? sender, EventArgs e)
 	{
 		Handler();
 		Environment.Exit(0);
@@ -57,13 +57,13 @@ public static class ConsoleController
 		if (!_visible)
 			return;
 
-		ToggleVisibility(null, null);
+		ToggleVisibility(null, EventArgs.Empty);
 	}
 
-	private static void ToggleVisibility(object sender, EventArgs e)
+	private static void ToggleVisibility(object? sender, EventArgs e)
 	{
 		_visible = !_visible;
-		_notifyIcon.ContextMenuStrip.Items[0].Text = _visible ? "Hide" : "Show";
+		_notifyIcon.ContextMenuStrip!.Items[0].Text = _visible ? "Hide" : "Show";
 		NativeMethods.SetConsoleWindowVisibility(_visible);
 	}
 
@@ -85,7 +85,7 @@ public static class ConsoleController
 		public static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
 
 		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
-		private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+		private static extern IntPtr FindWindow(string? lpClassName, string lpWindowName);
 
 		[DllImport("user32.dll")]
 		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);

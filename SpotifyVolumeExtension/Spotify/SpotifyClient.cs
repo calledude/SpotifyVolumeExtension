@@ -17,8 +17,8 @@ public sealed class SpotifyClient : IDisposable
 	private readonly TokenSwapWebAPIFactory _authFactory;
 	private readonly AutoResetEvent _authWait;
 
-	private SpotifyWebAPI Api { get; set; }
-	public event Action NoActivePlayer;
+	private SpotifyWebAPI? Api { get; set; }
+	public event Action? NoActivePlayer;
 
 	public SpotifyClient(ILogger<SpotifyClient> logger, Retry retrier)
 	{
@@ -39,11 +39,11 @@ public sealed class SpotifyClient : IDisposable
 		_authWait = new AutoResetEvent(false);
 	}
 
-	public async Task<PlaybackContext> GetPlaybackContext()
-		=> await _retrier.Wrap(() => Api.GetPlaybackAsync());
+	public async Task<PlaybackContext?> GetPlaybackContext()
+		=> await _retrier.Wrap(() => Api?.GetPlaybackAsync() ?? Task.FromResult<PlaybackContext?>(null));
 
-	public async Task<ErrorResponse> SetVolume(int volumePercent)
-		=> await _retrier.Wrap(() => Api.SetVolumeAsync(volumePercent));
+	public async Task<ErrorResponse?> SetVolume(int volumePercent)
+		=> await _retrier.Wrap(() => Api?.SetVolumeAsync(volumePercent) ?? Task.FromResult<ErrorResponse?>(null));
 
 	private void OnError(Error error)
 	{
@@ -80,25 +80,25 @@ public sealed class SpotifyClient : IDisposable
 		_logger.LogInformation("Setting 'AutoRefresh' to: {autoRefresh}", autoRefresh);
 		_authFactory.AutoRefresh = autoRefresh;
 
-		if (autoRefresh && Api.Token.IsExpired())
+		if (autoRefresh && (Api?.Token.IsExpired() ?? true))
 		{
 			await _retrier.Wrap(() => _authFactory.RefreshAuthAsync());
 		}
 	}
 
-	private void OnTokenExpired(object sender, AccessTokenExpiredEventArgs e)
+	private void OnTokenExpired(object? sender, AccessTokenExpiredEventArgs e)
 		=> _logger.LogInformation("Token expired.");
 
-	private void OnTokenRefresh(object sender, AuthSuccessEventArgs e)
+	private void OnTokenRefresh(object? sender, AuthSuccessEventArgs e)
 		=> _logger.LogInformation("Refreshed token.");
 
-	private void OnAuthSuccess(object sender, AuthSuccessEventArgs e)
+	private void OnAuthSuccess(object? sender, AuthSuccessEventArgs e)
 	{
 		_authWait.Set();
 		_logger.LogInformation("Successfully authenticated.");
 	}
 
-	private async void OnAuthFailure(object sender, AuthFailureEventArgs e)
+	private async void OnAuthFailure(object? sender, AuthFailureEventArgs e)
 	{
 		if (Api == default)
 		{
@@ -117,7 +117,7 @@ public sealed class SpotifyClient : IDisposable
 
 	public void Dispose()
 	{
-		Api.Dispose();
+		Api?.Dispose();
 		_authWait.Dispose();
 	}
 }

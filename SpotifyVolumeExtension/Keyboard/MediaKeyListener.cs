@@ -41,10 +41,10 @@ public sealed class MediaKeyListener : IDisposable
 
 	private async void OnKeyUp(object? sender, KeyboardEventArgs e)
 	{
-		if (!_debounceConfig.ContainsKey(e.CurrentKey))
+		if (!_debounceConfig.TryGetValue(e.CurrentKey, out var value))
 			return;
 
-		var (minimumWait, penalty) = _debounceConfig[e.CurrentKey];
+		var (minimumWait, penalty) = value;
 		if (minimumWait != default
 			&& penalty != default
 			&& DateTime.Now - _lastEvent < minimumWait)

@@ -9,6 +9,7 @@
 
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<PublishSingleFile Condition="'$(Configuration)' == 'Release'">true</PublishSingleFile>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<ItemGroup>

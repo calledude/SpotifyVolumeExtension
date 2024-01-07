@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace SpotifyVolumeExtension;
 
-public static class ConsoleController
+public static partial class ConsoleController
 {
 	private static readonly List<IDisposable> _disposables = new();
 
@@ -79,16 +79,18 @@ public static class ConsoleController
 		return true;
 	}
 
-	private static class NativeMethods
+	private static partial class NativeMethods
 	{
-		[DllImport("Kernel32")]
-		public static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+		[LibraryImport("Kernel32")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static partial bool SetConsoleCtrlHandler(EventHandler handler, [MarshalAs(UnmanagedType.Bool)] bool add);
 
-		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
-		private static extern IntPtr FindWindow(string? lpClassName, string lpWindowName);
+		[LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+		private static partial IntPtr FindWindow(string? lpClassName, string lpWindowName);
 
-		[DllImport("user32.dll")]
-		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+		[LibraryImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static partial bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
 		public static void SetConsoleWindowVisibility(bool visible)
 		{
@@ -100,7 +102,8 @@ public static class ConsoleController
 			SetForegroundWindow(hWnd);
 		}
 
-		[DllImport("user32.dll")]
-		private static extern bool SetForegroundWindow(IntPtr hWnd);
+		[LibraryImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static partial bool SetForegroundWindow(IntPtr hWnd);
 	}
 }

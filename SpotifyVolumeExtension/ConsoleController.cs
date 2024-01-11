@@ -85,7 +85,7 @@ public static partial class ConsoleController
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static partial bool SetConsoleCtrlHandler(EventHandler handler, [MarshalAs(UnmanagedType.Bool)] bool add);
 
-		[LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+		[LibraryImport("user32.dll", EntryPoint = "FindWindowA", StringMarshalling = StringMarshalling.Utf16)]
 		private static partial IntPtr FindWindow(string? lpClassName, string lpWindowName);
 
 		[LibraryImport("user32.dll")]

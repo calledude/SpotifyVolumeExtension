@@ -10,10 +10,7 @@
 # supported CodeQL languages.
 #
 name: "CodeQL"
-
-permissions:
-  packages: read
-  
+ 
 on:
   push:
     branches: [ "master" ]
@@ -33,6 +30,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
+      # required to restore nuget packages from github packages registry
+      packages: read
+      
       # required for all workflows
       security-events: write
 

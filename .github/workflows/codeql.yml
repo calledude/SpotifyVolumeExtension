@@ -11,6 +11,9 @@
 #
 name: "CodeQL"
 
+permissions:
+  packages: read
+  
 on:
   push:
     branches: [ "master" ]

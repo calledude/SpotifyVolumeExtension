@@ -7,7 +7,7 @@ public sealed class MediaKeyEventArgs : EventArgs
 {
 	public MediaKeyEventArgs()
 	{
-		When = DateTime.Now;
+		When = DateTime.UtcNow;
 	}
 
 	public Key Key { get; set; }

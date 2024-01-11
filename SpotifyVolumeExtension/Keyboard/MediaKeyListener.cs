@@ -47,7 +47,7 @@ public sealed class MediaKeyListener : IDisposable
 		var (minimumWait, penalty) = value;
 		if (minimumWait != default
 			&& penalty != default
-			&& DateTime.Now - _lastEvent < minimumWait)
+			&& DateTime.UtcNow - _lastEvent < minimumWait)
 		{
 			await Task.Delay(penalty);
 		}
@@ -56,7 +56,7 @@ public sealed class MediaKeyListener : IDisposable
 
 		if (SubscribedKeyPressed != null)
 		{
-			_lastEvent = DateTime.Now;
+			_lastEvent = DateTime.UtcNow;
 			await SubscribedKeyPressed.Invoke(new MediaKeyEventArgs()
 			{
 				Presses = _presses,

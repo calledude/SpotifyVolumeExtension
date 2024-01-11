@@ -30,14 +30,12 @@ public static partial class ConsoleController
 
 	private delegate bool EventHandler();
 
-	private static readonly EventHandler _handler = new(Handler);
-
 	static ConsoleController()
 	{
 		Console.Title = "SpotifyVolumeExtension";
 		_notifyIcon.DoubleClick += ToggleVisibility;
 
-		NativeMethods.SetConsoleCtrlHandler(_handler, true);
+		_ = NativeMethods.SetConsoleCtrlHandler(Handler, true);
 	}
 
 	public static void Start()
@@ -67,6 +65,8 @@ public static partial class ConsoleController
 		NativeMethods.SetConsoleWindowVisibility(_visible);
 	}
 
+#pragma warning disable S3241 // Methods should not return values that are never used
+	// This method signature looks exactly like this for a reason
 	private static bool Handler()
 	{
 		foreach (var disposable in _disposables)
@@ -78,6 +78,7 @@ public static partial class ConsoleController
 		Application.Exit();
 		return true;
 	}
+#pragma warning restore S3241 // Methods should not return values that are never used
 
 	private static partial class NativeMethods
 	{

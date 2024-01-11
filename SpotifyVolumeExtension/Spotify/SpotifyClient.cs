@@ -108,7 +108,7 @@ public sealed class SpotifyClient : IDisposable
 			return;
 		}
 
-		if (Api.Token == default || Api.Token.IsExpired())
+		if (Api?.Token.IsExpired() ?? true)
 		{
 			_logger.LogWarning("Refreshing token failed: {error} - Retrying.", e.Error);
 			await _retrier.Wrap(() => _authFactory.RefreshAuthAsync());

@@ -1,4 +1,5 @@
-﻿using SpotifyAPI.Web;
+﻿using Serilog;
+using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
 using Swan.Logging;
 using System;
@@ -24,7 +25,8 @@ public sealed class TokenInitializer : IDisposable
 	public async Task<AuthorizationCodeTokenResponse> InitializeToken()
 	{
 		//TODO: Need to implement retrying behavior
-		//_logger.LogInformation("Trying to authenticate with Spotify. This might take up to {timeout} seconds", 25);
+		var logger = Log.Logger.ForContext<TokenInitializer>();
+		logger.Information("Trying to authenticate with Spotify. This might take up to {timeout} seconds", 25);
 
 		// TODO: Abstract this away into a separate class akin to LoginRequest
 		var builder = new StringBuilder(TokenSwapAuthenticator.AuthorizeUri);
@@ -36,7 +38,9 @@ public sealed class TokenInitializer : IDisposable
 
 		await _server.Start();
 
-		return await _channel.Reader.ReadAsync();
+		var tokenResponse = await _channel.Reader.ReadAsync();
+		logger.Information("Successfully authenticated.");
+		return tokenResponse;
 	}
 
 	private async Task OnAuthorizationCodeReceived(object obj, AuthorizationCodeResponse code)

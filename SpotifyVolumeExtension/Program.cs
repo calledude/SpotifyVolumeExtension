@@ -22,6 +22,24 @@ public static class Program
 {
 	public static async Task Main()
 	{
+		const string logFormat = "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}";
+
+		var logger = new LoggerConfiguration()
+				.WriteTo.File(
+					"SpotifyVolumeExtension.log",
+					LogEventLevel.Verbose,
+					logFormat,
+					rollingInterval: RollingInterval.Day,
+					retainedFileCountLimit: 5)
+				.WriteTo.Console(
+					LogEventLevel.Verbose,
+					logFormat)
+				.MinimumLevel.Verbose()
+				.Enrich.FromLogContext()
+				.CreateLogger();
+
+		Log.Logger = logger;
+
 		var messageLoopTask = Task.Factory.StartNew(ConsoleController.Start, TaskCreationOptions.LongRunning);
 
 		AuthorizationCodeTokenResponse initialToken = null!;
@@ -60,27 +78,12 @@ public static class Program
 			.AddTransient<AsyncMonitor>()
 			.AddTransient<MediaKeyListener>()
 			.AddTransient<LowLevelKeyboardHook>()
-			.AddLogging(x =>
+			.AddLogging(logBuilder =>
 			{
-				const string logFormat = "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}";
-				x.ClearProviders();
-				var logger = new LoggerConfiguration()
-						.WriteTo.File(
-							"SpotifyVolumeExtension.log",
-							LogEventLevel.Verbose,
-							logFormat,
-							rollingInterval: RollingInterval.Day,
-							retainedFileCountLimit: 5)
-						.WriteTo.Console(
-							LogEventLevel.Verbose,
-							logFormat)
-						.MinimumLevel.Verbose()
-						.Enrich.FromLogContext()
-						.CreateLogger();
-
-				Log.Logger = logger;
-				x.AddSerilog(logger);
-				x.SetMinimumLevel(LogLevel.Trace);
+				logBuilder
+					.ClearProviders()
+					.AddSerilog(Log.Logger)
+					.SetMinimumLevel(LogLevel.Trace);
 			});
 
 		var serviceProvider = services.BuildServiceProvider();

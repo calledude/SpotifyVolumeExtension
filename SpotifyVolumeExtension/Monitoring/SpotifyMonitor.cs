@@ -33,7 +33,6 @@ public sealed class SpotifyMonitor : IDisposable
 		_statusController = statusController;
 
 		_spotifyClient = spotifyClient;
-		_spotifyClient.NoActivePlayer += CheckState;
 
 		_failure = new AsyncManualResetEvent(false);
 	}

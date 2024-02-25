@@ -29,7 +29,7 @@ public sealed class TokenInitializer : IDisposable
 		// TODO: Abstract this away into a separate class akin to LoginRequest
 		var builder = new StringBuilder(TokenSwapAuthenticator.AuthorizeUri);
 		builder.Append($"?response_type=code");
-		builder.Append($"&redirect_uri={HttpUtility.UrlEncode(TokenSwapAuthenticator.ExchangeServerUri)}");
+		builder.Append($"&redirect_uri={HttpUtility.UrlEncode(TokenSwapAuthenticator.ExchangeServerUrl)}");
 		builder.Append($"&scope={HttpUtility.UrlEncode(string.Join(" ", Scopes.UserModifyPlaybackState, Scopes.UserReadPlaybackState))}");
 
 		BrowserUtil.Open(new Uri(builder.ToString()));

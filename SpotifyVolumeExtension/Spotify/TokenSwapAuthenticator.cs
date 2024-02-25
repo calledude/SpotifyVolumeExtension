@@ -31,14 +31,14 @@ public class TokenSwapAuthenticator : IAuthenticator
 			_logger.LogInformation("Token expired.");
 
 			var tokenRequest = new TokenSwapRefreshRequest(_refreshUri, _initialToken.RefreshToken);
-			var refreshedToken = await OAuthClient.RequestToken(tokenRequest, apiConnector).ConfigureAwait(false);
+			var refreshedToken = await OAuthClient.RequestToken(tokenRequest, apiConnector);
 
 			_initialToken.AccessToken = refreshedToken.AccessToken;
 			_initialToken.CreatedAt = refreshedToken.CreatedAt;
 			_initialToken.ExpiresIn = refreshedToken.ExpiresIn;
 			_initialToken.Scope = refreshedToken.Scope;
 			_initialToken.TokenType = refreshedToken.TokenType;
-			if (refreshedToken.RefreshToken != null)
+			if (refreshedToken.RefreshToken is not null)
 			{
 				_initialToken.RefreshToken = refreshedToken.RefreshToken;
 			}

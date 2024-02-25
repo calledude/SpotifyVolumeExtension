@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Web;
 
 namespace SpotifyVolumeExtension.Spotify;
+
 public sealed class TokenInitializer : IDisposable
 {
 	private readonly EmbedIOAuthServer _server;
@@ -17,20 +18,20 @@ public sealed class TokenInitializer : IDisposable
 	public TokenInitializer()
 	{
 		Logger.NoLogging();
-		_server = new EmbedIOAuthServer(new Uri("http://localhost/auth"), 4002);
+		_server = new(new Uri("http://localhost/auth"), 4002);
 		_server.AuthorizationCodeReceived += OnAuthorizationCodeReceived;
 		_channel = Channel.CreateBounded<AuthorizationCodeTokenResponse>(1);
 	}
 
 	public async Task<AuthorizationCodeTokenResponse> InitializeToken()
 	{
-		//TODO: Need to implement retrying behavior
+		// TODO: Need to implement retrying behavior
 		var logger = Log.Logger.ForContext<TokenInitializer>();
 		logger.Information("Trying to authenticate with Spotify. This might take up to {timeout} seconds", 25);
 
 		// TODO: Abstract this away into a separate class akin to LoginRequest
 		var builder = new StringBuilder(TokenSwapAuthenticator.AuthorizeUri);
-		builder.Append($"?response_type=code");
+		builder.Append("?response_type=code");
 		builder.Append($"&redirect_uri={HttpUtility.UrlEncode(TokenSwapAuthenticator.ExchangeServerUrl)}");
 		builder.Append($"&scope={HttpUtility.UrlEncode(string.Join(" ", Scopes.UserModifyPlaybackState, Scopes.UserReadPlaybackState))}");
 

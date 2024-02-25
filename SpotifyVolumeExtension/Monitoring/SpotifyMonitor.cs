@@ -34,7 +34,7 @@ public sealed class SpotifyMonitor : IDisposable
 
 		_spotifyClient = spotifyClient;
 
-		_failure = new AsyncManualResetEvent(false);
+		_failure = new(false);
 	}
 
 	public async Task Start()
@@ -53,7 +53,7 @@ public sealed class SpotifyMonitor : IDisposable
 
 		_logger.LogInformation("Started. Now monitoring activity.");
 
-		_cts = new CancellationTokenSource();
+		_cts = new();
 		_pollTask = Task.WhenAny(PollSpotifyStatus(), Task.Delay(Timeout.Infinite, _cts.Token));
 	}
 
@@ -106,7 +106,7 @@ public sealed class SpotifyMonitor : IDisposable
 
 		_cts?.Cancel();
 
-		if (_pollTask != null)
+		if (_pollTask is not null)
 		{
 			_logger.LogTrace("Waiting for poll task to exit");
 			await _pollTask;

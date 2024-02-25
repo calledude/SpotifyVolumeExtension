@@ -15,8 +15,8 @@ public class SystemTextJsonSerializer : IJSONSerializer
 		Converters =
 		{
 			new PlayableItemConverter(),
-			new JsonStringEnumConverter()
-		}
+			new JsonStringEnumConverter(),
+		},
 	};
 
 	public IAPIResponse<T> DeserializeResponse<T>(IResponse response)

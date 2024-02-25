@@ -54,13 +54,13 @@ public sealed class MediaKeyListener : IDisposable
 
 		using var _ = await _lock.EnterAsync();
 
-		if (SubscribedKeyPressed != null)
+		if (SubscribedKeyPressed is not null)
 		{
 			_lastEvent = DateTime.UtcNow;
-			await SubscribedKeyPressed.Invoke(new MediaKeyEventArgs()
+			await SubscribedKeyPressed.Invoke(new MediaKeyEventArgs
 			{
 				Presses = _presses,
-				Key = e.CurrentKey
+				Key = e.CurrentKey,
 			});
 		}
 

@@ -12,18 +12,18 @@ public static partial class ConsoleController
 
 	private static readonly NotifyIcon _notifyIcon = new()
 	{
-		ContextMenuStrip = new ContextMenuStrip
+		ContextMenuStrip = new()
 		{
 			Items =
 			{
 				{ "Show", null, ToggleVisibility },
-				{ "Exit", null, CleanExit }
-			}
+				{ "Exit", null, CleanExit },
+			},
 		},
 
 		Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath),
 		Visible = true,
-		Text = Application.ProductName
+		Text = Application.ProductName,
 	};
 
 	private static bool _visible = true;

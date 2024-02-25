@@ -34,8 +34,8 @@ public sealed class StatusController : IDisposable
 		IServiceProvider serviceProvider)
 	{
 		_startLock = asyncMonitor;
-		_apiCallQueue = new ConcurrentQueue<Func<Task>>();
-		_queueTimer = new Timer(500);
+		_apiCallQueue = [];
+		_queueTimer = new(500);
 		_queueTimer.Elapsed += RunQueuedApiCalls;
 		_queueTimer.Enabled = true;
 

@@ -55,16 +55,16 @@ public sealed class SpotifyVolumeController : VolumeControllerBase
 	protected override async Task<int> GetBaselineVolume()
 	{
 		_logger.LogTrace("Fetching baseline volume");
-		var playbackContext = await _spotifyClient.GetPlaybackContext();
-		while (!playbackContext.IsPlaying)
+		var playbackContext = await _spotifyClient.GetCurrentPlayback();
+		while (playbackContext == null || !playbackContext.IsPlaying)
 		{
 			_logger.LogTrace("Failed to fetch baseline volume");
 			await Task.Delay(500);
-			playbackContext = await _spotifyClient.GetPlaybackContext();
+			playbackContext = await _spotifyClient.GetCurrentPlayback();
 		}
 
 		_logger.LogTrace("Fetched baseline volume");
-		return playbackContext.Device.VolumePercent.Value;
+		return playbackContext.Device.VolumePercent ?? 0;
 	}
 
 	private async Task VolumeKeyPressed(MediaKeyEventArgs m)

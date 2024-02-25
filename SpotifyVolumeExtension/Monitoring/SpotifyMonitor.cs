@@ -126,8 +126,8 @@ public sealed class SpotifyMonitor : IDisposable
 
 	private async Task<bool> IsPlayingMusic()
 	{
-		var pb = await _spotifyClient.GetPlaybackContext();
-		return pb?.IsPlaying ?? false;
+		var currentPlaybackContext = await _spotifyClient.GetCurrentPlayback();
+		return currentPlaybackContext?.IsPlaying ?? false;
 	}
 
 	public void Dispose()

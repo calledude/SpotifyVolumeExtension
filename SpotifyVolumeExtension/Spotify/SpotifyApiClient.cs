@@ -16,7 +16,7 @@ public sealed class SpotifyApiClient
 		_client = client;
 	}
 
-	public async Task<CurrentlyPlayingContext?> GetPlaybackContext()
+	public async Task<CurrentlyPlayingContext?> GetCurrentPlayback()
 		=> await _retrier.Wrap(() => _client.Player.GetCurrentPlayback());
 
 	public async Task<bool> SetVolume(int volumePercent)

@@ -48,8 +48,6 @@ public sealed class SpotifyMonitor : IDisposable
 		await _processMonitorService.WaitForProcessToStart();
 		_logger.LogInformation("Spotify process detected.");
 
-		await _spotifyClient.SetAutoRefresh(true);
-
 		_logger.LogInformation("Waiting for music to start playing.");
 		if (!await TryWaitForPlaybackActivation())
 			return;
@@ -118,7 +116,6 @@ public sealed class SpotifyMonitor : IDisposable
 
 		_failure.Set();
 
-		await _spotifyClient.SetAutoRefresh(false);
 		await Start();
 	}
 
@@ -136,7 +133,6 @@ public sealed class SpotifyMonitor : IDisposable
 
 	public void Dispose()
 	{
-		_spotifyClient.Dispose();
 		_cts?.Dispose();
 		_statusController.Dispose();
 	}

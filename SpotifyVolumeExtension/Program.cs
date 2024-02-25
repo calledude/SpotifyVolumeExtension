@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using Serilog;
 using Serilog.Events;
+using SpotifyAPI.Web;
+using SpotifyAPI.Web.Http;
 using SpotifyVolumeExtension.Keyboard;
 using SpotifyVolumeExtension.Monitoring;
 using SpotifyVolumeExtension.Spotify;
@@ -22,8 +24,33 @@ public static class Program
 	{
 		var messageLoopTask = Task.Factory.StartNew(ConsoleController.Start, TaskCreationOptions.LongRunning);
 
+		AuthorizationCodeTokenResponse initialToken = null!;
+		using (var tokenInitializer = new TokenInitializer())
+		{
+			initialToken = await tokenInitializer.InitializeToken();
+		}
+
 		var services = new ServiceCollection()
-			.AddSingleton<SpotifyClient>()
+			.AddSingleton(initialToken)
+			.AddSingleton<TokenSwapAuthenticator>()
+			.AddSingleton<NewtonsoftJSONSerializer>()
+			.AddSingleton<SimpleRetryHandler>()
+			.AddSingleton<NetHttpClient>()
+			.AddSingleton(sp =>
+			{
+				return new SpotifyClientConfig
+				(
+					SpotifyUrls.APIV1,
+					sp.GetRequiredService<TokenSwapAuthenticator>(),
+					sp.GetRequiredService<NewtonsoftJSONSerializer>(),
+					sp.GetRequiredService<NetHttpClient>(),
+					sp.GetRequiredService<SimpleRetryHandler>(),
+					null,
+					null! // Not needed for our purposes
+				);
+			})
+			.AddSingleton<SpotifyAPI.Web.SpotifyClient>()
+			.AddSingleton<Spotify.SpotifyClient>()
 			.AddSingleton<SpotifyMonitor>()
 			.AddSingleton<StatusController>()
 			.AddSingleton<ProcessMonitorService>()
@@ -51,15 +78,12 @@ public static class Program
 						.Enrich.FromLogContext()
 						.CreateLogger();
 
+				Log.Logger = logger;
 				x.AddSerilog(logger);
 				x.SetMinimumLevel(LogLevel.Trace);
 			});
 
 		var serviceProvider = services.BuildServiceProvider();
-
-		serviceProvider
-			.GetRequiredService<SpotifyClient>()
-			.Authenticate();
 
 		await serviceProvider
 			.GetRequiredService<SpotifyMonitor>()

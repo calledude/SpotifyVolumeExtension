@@ -1,9 +1,8 @@
 ﻿using H.Hooks;
 using Microsoft.Extensions.DependencyInjection;
 using Nito.AsyncEx;
-using SpotifyAPI.Web.Models;
+using SpotifyAPI.Web;
 using SpotifyVolumeExtension.Keyboard;
-using SpotifyVolumeExtension.Spotify;
 using SpotifyVolumeExtension.Volume;
 using System;
 using System.Collections.Concurrent;
@@ -17,7 +16,7 @@ public sealed class StatusController : IDisposable
 {
 	private bool _lastState;
 	private readonly ProcessMonitorService _processMonitorService;
-	private readonly SpotifyClient _spotifyClient;
+	private readonly Spotify.SpotifyClient _spotifyClient;
 	private readonly IServiceProvider _serviceProvider;
 	private readonly MediaKeyListener _mediaKeyListener;
 	private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
@@ -28,7 +27,7 @@ public sealed class StatusController : IDisposable
 
 	public StatusController(
 		ProcessMonitorService processMonitorService,
-		SpotifyClient spotifyClient,
+		Spotify.SpotifyClient spotifyClient,
 		AsyncMonitor asyncMonitor,
 		MediaKeyListener mediaKeyListener,
 		IServiceProvider serviceProvider)
@@ -100,12 +99,14 @@ public sealed class StatusController : IDisposable
 		_apiCallQueue.Enqueue(CheckStateImmediate);
 	}
 
-	private async Task OnStateChange(bool newState, PlaybackContext? context)
+	private async Task OnStateChange(bool newState, CurrentlyPlayingContext? context)
 	{
 		using (_ = await _startLock.EnterAsync())
 		{
-			if (context?.Device != default)
-				VolumeReport?.Invoke(context.Device.VolumePercent);
+			if (context?.Device.VolumePercent is not null)
+			{
+				VolumeReport?.Invoke(context.Device.VolumePercent.Value);
+			}
 
 			if (newState == _lastState)
 				return;

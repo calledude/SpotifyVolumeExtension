@@ -56,20 +56,23 @@ public sealed class SpotifyVolumeController : VolumeControllerBase
 	{
 		_logger.LogTrace("Fetching baseline volume");
 		var playbackContext = await _spotifyClient.GetPlaybackContext();
-		while (playbackContext?.Device == null)
+		while (!playbackContext.IsPlaying)
 		{
 			_logger.LogTrace("Failed to fetch baseline volume");
 			await Task.Delay(500);
 			playbackContext = await _spotifyClient.GetPlaybackContext();
 		}
+
 		_logger.LogTrace("Fetched baseline volume");
-		return playbackContext.Device.VolumePercent;
+		return playbackContext.Device.VolumePercent.Value;
 	}
 
 	private async Task VolumeKeyPressed(MediaKeyEventArgs m)
 	{
-		if (m.Key == Key.VolumeUp) Volume += m.Presses;
-		else Volume -= m.Presses;
+		if (m.Key == Key.VolumeUp)
+			Volume += m.Presses;
+		else
+			Volume -= m.Presses;
 
 		Volume = Math.Clamp(Volume, 0, 100);
 
@@ -94,9 +97,9 @@ public sealed class SpotifyVolumeController : VolumeControllerBase
 		if (_lastVolume == Volume)
 			return;
 
-		var err = await _spotifyClient.SetVolume(Volume);
+		var success = await _spotifyClient.SetVolume(Volume);
 
-		if (err != null && err.Error == null)
+		if (success)
 		{
 			_logger.LogInformation("Changed volume to {volume}%", Volume);
 			_lastVolume = Volume;

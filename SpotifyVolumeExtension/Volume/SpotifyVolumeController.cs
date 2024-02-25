@@ -13,11 +13,11 @@ public sealed class SpotifyVolumeController : VolumeControllerBase
 	private readonly MediaKeyListener _mediaKeyListener;
 	private readonly ILogger<SpotifyVolumeController> _logger;
 	private readonly StatusController _statusController;
-	private readonly SpotifyClient _spotifyClient;
+	private readonly SpotifyApiClient _spotifyClient;
 	private int _lastVolume;
 
 	public SpotifyVolumeController(
-		SpotifyClient spotifyClient,
+		SpotifyApiClient spotifyClient,
 		StatusController statusController,
 		MediaKeyListener mediaKeyListener,
 		ILogger<SpotifyVolumeController> logger) : base(logger)

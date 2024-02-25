@@ -67,8 +67,8 @@ public static class Program
 					null! // Not needed for our purposes
 				);
 			})
-			.AddSingleton<SpotifyAPI.Web.SpotifyClient>()
-			.AddSingleton<Spotify.SpotifyClient>()
+			.AddSingleton<SpotifyClient>()
+			.AddSingleton<SpotifyApiClient>()
 			.AddSingleton<SpotifyMonitor>()
 			.AddSingleton<StatusController>()
 			.AddSingleton<ProcessMonitorService>()

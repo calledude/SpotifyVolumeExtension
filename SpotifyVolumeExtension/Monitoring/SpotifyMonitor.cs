@@ -10,7 +10,7 @@ namespace SpotifyVolumeExtension.Monitoring;
 public sealed class SpotifyMonitor : IDisposable
 {
 	private readonly StatusController _statusController;
-	private readonly SpotifyClient _spotifyClient;
+	private readonly SpotifyApiClient _spotifyClient;
 	private readonly ILogger<SpotifyMonitor> _logger;
 	private readonly ProcessMonitorService _processMonitorService;
 	private readonly AsyncMonitor _start;
@@ -19,7 +19,7 @@ public sealed class SpotifyMonitor : IDisposable
 	private Task? _pollTask;
 
 	public SpotifyMonitor(
-		SpotifyClient spotifyClient,
+		SpotifyApiClient spotifyClient,
 		ProcessMonitorService processMonitorService,
 		AsyncMonitor asyncMonitor,
 		StatusController statusController,

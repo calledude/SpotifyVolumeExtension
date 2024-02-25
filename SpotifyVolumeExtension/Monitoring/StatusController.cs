@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nito.AsyncEx;
 using SpotifyAPI.Web;
 using SpotifyVolumeExtension.Keyboard;
+using SpotifyVolumeExtension.Spotify;
 using SpotifyVolumeExtension.Volume;
 using System;
 using System.Collections.Concurrent;
@@ -16,7 +17,7 @@ public sealed class StatusController : IDisposable
 {
 	private bool _lastState;
 	private readonly ProcessMonitorService _processMonitorService;
-	private readonly Spotify.SpotifyClient _spotifyClient;
+	private readonly SpotifyApiClient _spotifyClient;
 	private readonly IServiceProvider _serviceProvider;
 	private readonly MediaKeyListener _mediaKeyListener;
 	private readonly ConcurrentQueue<Func<Task>> _apiCallQueue;
@@ -27,7 +28,7 @@ public sealed class StatusController : IDisposable
 
 	public StatusController(
 		ProcessMonitorService processMonitorService,
-		Spotify.SpotifyClient spotifyClient,
+		SpotifyApiClient spotifyClient,
 		AsyncMonitor asyncMonitor,
 		MediaKeyListener mediaKeyListener,
 		IServiceProvider serviceProvider)

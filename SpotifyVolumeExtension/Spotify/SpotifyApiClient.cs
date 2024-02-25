@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 
 namespace SpotifyVolumeExtension.Spotify;
 
-public sealed class SpotifyClient
+public sealed class SpotifyApiClient
 {
 	private readonly Retry _retrier;
 
-	private readonly SpotifyAPI.Web.SpotifyClient _client;
+	private readonly SpotifyClient _client;
 
-	public SpotifyClient(Retry retrier, SpotifyAPI.Web.SpotifyClient client)
+	public SpotifyApiClient(Retry retrier, SpotifyClient client)
 	{
 		_retrier = retrier;
 		_client = client;

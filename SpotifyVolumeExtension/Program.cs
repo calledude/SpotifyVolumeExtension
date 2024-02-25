@@ -33,7 +33,7 @@ public static class Program
 		var services = new ServiceCollection()
 			.AddSingleton(initialToken)
 			.AddSingleton<TokenSwapAuthenticator>()
-			.AddSingleton<NewtonsoftJSONSerializer>()
+			.AddSingleton<SystemTextJsonSerializer>()
 			.AddSingleton<SimpleRetryHandler>()
 			.AddSingleton<NetHttpClient>()
 			.AddSingleton(sp =>
@@ -42,7 +42,7 @@ public static class Program
 				(
 					SpotifyUrls.APIV1,
 					sp.GetRequiredService<TokenSwapAuthenticator>(),
-					sp.GetRequiredService<NewtonsoftJSONSerializer>(),
+					sp.GetRequiredService<SystemTextJsonSerializer>(),
 					sp.GetRequiredService<NetHttpClient>(),
 					sp.GetRequiredService<SimpleRetryHandler>(),
 					null,

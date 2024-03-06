@@ -4,6 +4,7 @@ using SpotifyAPI.Web.Auth;
 using Swan.Logging;
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Web;
@@ -25,23 +26,35 @@ public sealed class TokenInitializer : IDisposable
 
 	public async Task<AuthorizationCodeTokenResponse> InitializeToken()
 	{
-		// TODO: Need to implement retrying behavior
+		const int attemptTimeoutInSeconds = 25;
 		var logger = Log.Logger.ForContext<TokenInitializer>();
-		logger.Information("Trying to authenticate with Spotify. This might take up to {timeout} seconds", 25);
+		logger.Information("Trying to authenticate with Spotify. This might take up to {timeout} seconds", attemptTimeoutInSeconds);
 
-		// TODO: Abstract this away into a separate class akin to LoginRequest
 		var builder = new StringBuilder(TokenSwapAuthenticator.AuthorizeUri);
 		builder.Append("?response_type=code");
 		builder.Append($"&redirect_uri={HttpUtility.UrlEncode(TokenSwapAuthenticator.ExchangeServerUrl)}");
 		builder.Append($"&scope={HttpUtility.UrlEncode(string.Join(" ", Scopes.UserModifyPlaybackState, Scopes.UserReadPlaybackState))}");
 
-		BrowserUtil.Open(new Uri(builder.ToString()));
+		var authUri = new Uri(builder.ToString());
+		BrowserUtil.Open(authUri);
 
 		await _server.Start();
 
-		var tokenResponse = await _channel.Reader.ReadAsync();
-		logger.Information("Successfully authenticated.");
-		return tokenResponse;
+		while (true)
+		{
+			try
+			{
+				using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(attemptTimeoutInSeconds));
+				var tokenResponse = await _channel.Reader.ReadAsync(cts.Token).AsTask();
+				logger.Information("Successfully authenticated.");
+				return tokenResponse;
+			}
+			catch (OperationCanceledException)
+			{
+				logger.Warning("Authentication attempt timed out. Retrying.");
+				BrowserUtil.Open(authUri);
+			}
+		}
 	}
 
 	private async Task OnAuthorizationCodeReceived(object obj, AuthorizationCodeResponse code)

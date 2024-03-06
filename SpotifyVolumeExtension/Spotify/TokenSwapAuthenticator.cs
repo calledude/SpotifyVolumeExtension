@@ -8,7 +8,7 @@ namespace SpotifyVolumeExtension.Spotify;
 
 public class TokenSwapAuthenticator : IAuthenticator
 {
-	public const string ExchangeServerUrl = "https://spotifyvolumeextension.azurewebsites.net";
+	public const string ExchangeServerUrl = "https://svetokenswap.azurewebsites.net";
 	public static readonly string AuthorizeUri = ExchangeServerUrl + "/authorize";
 	public static readonly string SwapUri = ExchangeServerUrl + "/swap";
 
